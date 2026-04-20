@@ -27,7 +27,7 @@ export const Sidebar = ({ streak }) => {
       <aside className={`sidebar ${open ? 'open' : ''}`}>
         <div className="sidebar-brand">
           <div className="brand-icon">⚡</div>
-          <span className="brand-name">Focus<span>Flow</span></span>
+          <span className="brand-name">LOC<span>KIN</span></span>
         </div>
 
         <nav className="sidebar-nav">
