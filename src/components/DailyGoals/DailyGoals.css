@@ -1,0 +1,189 @@
+/* ── Goal Popup ── */
+.popup-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.8);
+  backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 20px;
+}
+
+.popup-modal {
+  background: var(--surface-1);
+  border: 1px solid var(--border-bright);
+  border-radius: var(--radius-xl);
+  padding: 40px 36px;
+  width: 100%;
+  max-width: 460px;
+  box-shadow: 0 32px 80px rgba(0,0,0,0.7), 0 0 0 1px rgba(34,211,238,0.08);
+  animation: popIn 0.28s var(--spring);
+}
+
+@keyframes popIn {
+  from { opacity: 0; transform: scale(0.88) translateY(16px); }
+  to   { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+.popup-icon {
+  width: 58px; height: 58px;
+  border-radius: var(--radius-lg);
+  background: var(--cyan-dim);
+  border: 1px solid rgba(34,211,238,0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--cyan);
+  margin: 0 auto 18px;
+  box-shadow: 0 0 20px rgba(34,211,238,0.1);
+}
+
+.popup-title {
+  font-family: var(--font-display);
+  font-size: 23px;
+  font-weight: 800;
+  text-align: center;
+  margin-bottom: 6px;
+  letter-spacing: -0.3px;
+}
+
+.popup-sub {
+  font-size: 13.5px;
+  color: var(--text-soft);
+  text-align: center;
+  margin-bottom: 28px;
+  line-height: 1.5;
+}
+
+.popup-form { display: flex; flex-direction: column; gap: 12px; }
+
+.popup-field { display: flex; align-items: center; gap: 10px; }
+
+.popup-num {
+  width: 26px; height: 26px;
+  border-radius: 50%;
+  background: var(--cyan-dim);
+  border: 1px solid rgba(34,211,238,0.25);
+  color: var(--cyan);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.popup-submit { width: 100%; margin-top: 10px; padding: 12px; font-size: 14px; }
+.popup-submit.disabled { opacity: 0.35; cursor: not-allowed; }
+
+.popup-hint {
+  font-size: 11.5px;
+  color: var(--text-muted);
+  text-align: center;
+  font-family: var(--font-mono);
+}
+
+/* ── Daily Goals View ── */
+.goals-page { max-width: 560px; margin: 0 auto; }
+
+.goals-progress-wrap {
+  margin: 26px 0 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.goals-progress-bar {
+  height: 6px;
+  background: var(--surface-3);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.goals-progress-fill {
+  height: 100%;
+  border-radius: 3px;
+  transition: width 0.5s var(--ease);
+  box-shadow: 0 0 8px var(--cyan-glow);
+}
+
+.goals-progress-label {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.goals-list { display: flex; flex-direction: column; gap: 10px; }
+
+.goal-item {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  background: var(--surface-1);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 18px 16px;
+  cursor: pointer;
+  transition: border-color 0.15s, opacity 0.2s, transform 0.15s;
+  user-select: none;
+}
+
+.goal-item:hover { border-color: var(--border-bright); transform: translateY(-1px); }
+.goal-item.done  { opacity: 0.5; }
+
+.goal-check {
+  width: 30px; height: 30px;
+  border-radius: 9px;
+  border: 2px solid;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: background 0.2s, box-shadow 0.2s;
+}
+
+.goal-content { display: flex; flex-direction: column; gap: 2px; }
+
+.goal-num {
+  font-family: var(--font-display);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.goal-text {
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--text);
+}
+
+.goal-item.done .goal-text { text-decoration: line-through; }
+
+/* Celebration */
+.goals-celebration {
+  margin-top: 28px;
+  background: linear-gradient(135deg, rgba(74,222,128,0.07), rgba(34,211,238,0.07));
+  border: 1px solid rgba(74,222,128,0.2);
+  border-radius: var(--radius-xl);
+  padding: 32px;
+  text-align: center;
+  animation: popIn 0.3s var(--spring);
+}
+
+.celebrate-emoji { font-size: 52px; margin-bottom: 12px; }
+
+.celebrate-title {
+  font-family: var(--font-display);
+  font-size: 22px;
+  font-weight: 800;
+  color: var(--green);
+  margin-bottom: 6px;
+  text-shadow: 0 0 20px rgba(74,222,128,0.3);
+}
+
+.celebrate-sub { font-size: 13px; color: var(--text-soft); }

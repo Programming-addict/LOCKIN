@@ -1,0 +1,288 @@
+.wr-page { max-width: 680px; margin: 0 auto; }
+
+/* Week nav */
+.wr-week-nav {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 24px 0 20px;
+  background: var(--surface-1);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 10px 14px;
+}
+
+.wr-week-label {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-family: var(--font-display);
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.wr-current-badge {
+  background: var(--cyan-dim);
+  border: 1px solid rgba(34,211,238,0.2);
+  border-radius: 10px;
+  padding: 2px 9px;
+  font-size: 10px;
+  font-family: var(--font-mono);
+  color: var(--cyan);
+  letter-spacing: 0.5px;
+}
+
+/* Stats grid */
+.wr-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.wr-stat-card {
+  background: var(--surface-1);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 18px 14px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  transition: border-color 0.15s;
+}
+
+.wr-stat-card:hover { border-color: var(--border-bright); }
+
+.wr-stat-icon { margin-bottom: 2px; }
+
+.wr-stat-card.accent-cyan  .wr-stat-icon { color: var(--cyan);  }
+.wr-stat-card.accent-purple .wr-stat-icon { color: #a78bfa; }
+.wr-stat-card.accent-amber .wr-stat-icon { color: var(--amber); }
+.wr-stat-card.accent-green .wr-stat-icon { color: var(--green); }
+
+.wr-stat-val {
+  font-family: var(--font-mono);
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--text);
+  line-height: 1;
+}
+
+.wr-stat-lbl {
+  font-family: var(--font-display);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+/* Sections */
+.wr-section {
+  background: var(--surface-1);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xl);
+  padding: 20px;
+  margin-bottom: 14px;
+}
+
+.wr-section-header {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-family: var(--font-display);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-bottom: 18px;
+}
+
+/* Bar chart */
+.wr-chart {
+  display: flex;
+  gap: 8px;
+  align-items: flex-end;
+  height: 140px;
+  padding-top: 24px;
+}
+
+.wr-bar-col {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+  height: 100%;
+  position: relative;
+}
+
+.wr-bar-col.today .wr-bar-label { color: var(--cyan); font-weight: 700; }
+.wr-bar-col.today .wr-bar { background: var(--cyan); box-shadow: 0 0 8px var(--cyan-glow); }
+
+.wr-bar-count {
+  position: absolute;
+  top: -4px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--text-muted);
+}
+
+.wr-bar-wrap {
+  flex: 1;
+  width: 100%;
+  display: flex;
+  align-items: flex-end;
+}
+
+.wr-bar {
+  width: 100%;
+  background: var(--surface-3);
+  border-radius: 4px 4px 0 0;
+  transition: height 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+  min-height: 4px;
+  background: linear-gradient(180deg, var(--cyan) 0%, rgba(34,211,238,0.5) 100%);
+  box-shadow: 0 0 6px rgba(34,211,238,0.2);
+}
+
+.wr-bar.empty {
+  background: var(--surface-3);
+  box-shadow: none;
+}
+
+.wr-bar-label {
+  font-family: var(--font-display);
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--text-muted);
+  letter-spacing: 0.3px;
+}
+
+.wr-bar-time {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  color: var(--text-muted);
+}
+
+/* Goals per day */
+.wr-goals-list { display: flex; flex-direction: column; gap: 9px; }
+
+.wr-goal-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.wr-goal-row.today .wr-goal-day { color: var(--cyan); }
+
+.wr-goal-day {
+  font-family: var(--font-display);
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-muted);
+  width: 28px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.wr-goal-bar-wrap { flex: 1; }
+
+.wr-goal-bar-track {
+  height: 6px;
+  background: var(--surface-3);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.wr-goal-bar-fill {
+  height: 100%;
+  background: var(--surface-3);
+  border-radius: 3px;
+  transition: width 0.5s var(--ease);
+  background: linear-gradient(90deg, rgba(99,102,241,0.8), #818cf8);
+}
+
+.wr-goal-bar-fill.perfect {
+  background: linear-gradient(90deg, var(--green), #86efac);
+  box-shadow: 0 0 6px rgba(74,222,128,0.3);
+}
+
+.wr-goal-count {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text-muted);
+  width: 36px;
+  text-align: right;
+}
+
+.wr-goal-count.perfect { color: var(--green); }
+
+/* Streak callout */
+.wr-streak-card {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  background: var(--surface-1);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 18px 20px;
+  margin-bottom: 14px;
+}
+
+.flame-on  { color: var(--amber); filter: drop-shadow(0 0 8px var(--amber-glow)); }
+.flame-off { color: var(--text-muted); }
+
+.wr-streak-big {
+  font-family: var(--font-display);
+  font-size: 17px;
+  font-weight: 800;
+  color: var(--text);
+}
+
+.wr-streak-sub {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-top: 2px;
+  font-family: var(--font-mono);
+}
+
+/* Reflection */
+.wr-reflection {
+  width: 100%;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  color: var(--text);
+  padding: 14px 16px;
+  font-size: 14px;
+  font-family: var(--font-body);
+  line-height: 1.7;
+  resize: vertical;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.wr-reflection:focus {
+  border-color: rgba(34,211,238,0.35);
+  box-shadow: 0 0 0 3px rgba(34,211,238,0.06);
+}
+
+.wr-reflection::placeholder { color: var(--text-muted); font-style: italic; }
+
+.wr-reflection-hint {
+  font-size: 10.5px;
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+  margin-top: 6px;
+  text-align: right;
+}
+
+/* Responsive */
+@media (max-width: 560px) {
+  .wr-stats-grid { grid-template-columns: repeat(2, 1fr); }
+  .wr-chart { height: 100px; }
+}

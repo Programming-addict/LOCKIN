@@ -1,0 +1,114 @@
+/* ── Fonts ── */
+@import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,400&display=swap');
+
+/* ── Design Tokens ── */
+:root {
+  /* Backgrounds */
+  --bg:           #060910;
+  --surface-1:    #0c1118;
+  --surface-2:    #111822;
+  --surface-3:    #162030;
+
+  /* Borders */
+  --border:       rgba(255,255,255,0.065);
+  --border-bright:rgba(255,255,255,0.12);
+
+  /* Text */
+  --text:         #eaf0f8;
+  --text-muted:   #475e72;
+  --text-soft:    #8da3b4;
+
+  /* Accent – Cyan */
+  --cyan:         #22d3ee;
+  --cyan-dim:     rgba(34,211,238,0.1);
+  --cyan-glow:    rgba(34,211,238,0.28);
+
+  /* Accent – Amber */
+  --amber:        #fbbf24;
+  --amber-dim:    rgba(251,191,36,0.1);
+  --amber-glow:   rgba(251,191,36,0.28);
+
+  /* Accent – Green */
+  --green:        #4ade80;
+  --green-dim:    rgba(74,222,128,0.1);
+  --green-glow:   rgba(74,222,128,0.28);
+
+  /* Accent – Rose */
+  --rose:         #fb7185;
+  --rose-dim:     rgba(251,113,133,0.1);
+
+  /* Fonts */
+  --font-display: 'Syne', sans-serif;
+  --font-body:    'DM Sans', sans-serif;
+  --font-mono:    'JetBrains Mono', monospace;
+
+  /* Radius */
+  --radius-sm:    7px;
+  --radius:       11px;
+  --radius-lg:    16px;
+  --radius-xl:    20px;
+
+  /* Misc */
+  --sidebar-w:    230px;
+  --ease:         cubic-bezier(0.4, 0, 0.2, 1);
+  --spring:       cubic-bezier(0.34, 1.56, 0.64, 1);
+
+  /* Card helpers */
+  --card-shadow:  0 1px 3px rgba(0,0,0,0.4), 0 8px 24px rgba(0,0,0,0.3);
+  --card-shadow-lg: 0 2px 8px rgba(0,0,0,0.5), 0 20px 48px rgba(0,0,0,0.4);
+}
+
+/* ── Reset ── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body, #root { height: 100%; width: 100%; }
+
+body {
+  font-family: var(--font-body);
+  background: var(--bg);
+  color: var(--text);
+  font-size: 14px;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Subtle dot-grid background */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image: radial-gradient(circle, rgba(255,255,255,0.035) 1px, transparent 1px);
+  background-size: 30px 30px;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* Top ambient glow */
+body::after {
+  content: '';
+  position: fixed;
+  top: -160px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 700px;
+  height: 500px;
+  background: radial-gradient(ellipse at center, rgba(34,211,238,0.035) 0%, transparent 65%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+#root { position: relative; z-index: 1; }
+
+button { cursor: pointer; font-family: inherit; border: none; outline: none; background: none; }
+input, textarea, select { font-family: inherit; outline: none; }
+a { text-decoration: none; color: inherit; }
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--surface-3); border-radius: 10px; }
+::-webkit-scrollbar-thumb:hover { background: var(--border-bright); }
+
+/* Selection */
+::selection { background: var(--cyan-dim); color: var(--cyan); }
