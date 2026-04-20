@@ -1,106 +1,135 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { RefreshCw } from 'lucide-react';
 import './News.css';
 
+const R2J = 'https://api.rss2json.com/v1/api.json?count=16&rss_url=';
+
 const CATEGORIES = [
-  { id: 'all',    label: '🔥 Top',    subs: ['worldnews','technology','formula1','space'] },
-  { id: 'world',  label: '🌍 World',  subs: ['worldnews','UkraineWarVideoReport','geopolitics'] },
-  { id: 'tech',   label: '💻 Tech',   subs: ['technology','artificial','Futurology'] },
-  { id: 'racing', label: '🏎️ Racing', subs: ['formula1','motorsports','NASCAR'] },
+  {
+    id: 'top',
+    label: '🔥 Top',
+    sources: [
+      { url: 'http://rss.cnn.com/rss/edition.rss',              name: 'CNN'         },
+      { url: 'http://feeds.bbci.co.uk/news/rss.xml',            name: 'BBC News'    },
+    ],
+  },
+  {
+    id: 'world',
+    label: '🌍 World',
+    sources: [
+      { url: 'http://rss.cnn.com/rss/edition_world.rss',        name: 'CNN World'   },
+      { url: 'http://feeds.bbci.co.uk/news/world/rss.xml',      name: 'BBC World'   },
+    ],
+  },
+  {
+    id: 'tech',
+    label: '💻 Tech',
+    sources: [
+      { url: 'https://techcrunch.com/feed/',                    name: 'TechCrunch'  },
+      { url: 'https://www.theverge.com/rss/index.xml',          name: 'The Verge'   },
+    ],
+  },
+  {
+    id: 'racing',
+    label: '🏎️ Racing',
+    sources: [
+      { url: 'https://www.autosport.com/rss/feed/all',          name: 'Autosport'   },
+      { url: 'https://www.motorsport.com/rss/all/news/',        name: 'Motorsport'  },
+    ],
+  },
 ];
 
-const CAT_COLORS = { world: '#fb7185', tech: '#22d3ee', racing: '#fbbf24', all: '#a78bfa' };
-const CAT_LABELS = { worldnews: 'World', UkraineWarVideoReport: 'War', geopolitics: 'World',
-                     technology: 'Tech', artificial: 'AI', Futurology: 'Future',
-                     formula1: 'F1', motorsports: 'Racing', NASCAR: 'NASCAR', space: 'Space' };
-
-const timeAgo = (unix) => {
-  const s = Math.floor(Date.now() / 1000 - unix);
-  if (s < 3600)  return `${Math.floor(s / 60)}m ago`;
-  if (s < 86400) return `${Math.floor(s / 3600)}h ago`;
-  return `${Math.floor(s / 86400)}d ago`;
+const SOURCE_COLORS = {
+  'CNN':         '#cc0000',
+  'CNN World':   '#cc0000',
+  'BBC News':    '#bb1919',
+  'BBC World':   '#bb1919',
+  'TechCrunch':  '#22d3ee',
+  'The Verge':   '#a855f7',
+  'Autosport':   '#fbbf24',
+  'Motorsport':  '#fbbf24',
 };
 
-const getImage = (post) => {
-  // Try preview first (best quality)
-  const res = post.preview?.images?.[0]?.resolutions;
-  if (res?.length) return res[Math.min(2, res.length - 1)].url.replace(/&amp;/g, '&');
-  // Fall back to thumbnail
-  const t = post.thumbnail;
-  if (t && !['self','default','nsfw','image','spoiler',''].includes(t)) return t;
+const timeAgo = (dateStr) => {
+  const diff = Math.floor((Date.now() - new Date(dateStr).getTime()) / 1000);
+  if (diff < 3600)  return `${Math.floor(diff / 60)}m ago`;
+  if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
+  return `${Math.floor(diff / 86400)}d ago`;
+};
+
+// Extract best image from rss2json item
+const getImage = (item) => {
+  if (item.thumbnail && item.thumbnail.startsWith('http')) return item.thumbnail;
+  if (item.enclosure?.link?.match(/\.(jpg|jpeg|png|webp)/i)) return item.enclosure.link;
+  // Try to extract from content/description
+  const match = (item.content || item.description || '').match(/<img[^>]+src=["']([^"']+)["']/i);
+  if (match) return match[1];
   return null;
 };
 
-const CAT_GRADIENTS = {
-  world:  'linear-gradient(135deg,#3b0d14,#7f1d3a)',
-  UkraineWarVideoReport: 'linear-gradient(135deg,#3b0d14,#7f1d3a)',
-  geopolitics: 'linear-gradient(135deg,#3b0d14,#7f1d3a)',
-  technology: 'linear-gradient(135deg,#0c2236,#0e4a6e)',
-  artificial: 'linear-gradient(135deg,#0c2236,#0e4a6e)',
-  Futurology: 'linear-gradient(135deg,#0c2236,#0e4a6e)',
-  formula1:   'linear-gradient(135deg,#2d1500,#7a3500)',
-  motorsports:'linear-gradient(135deg,#2d1500,#7a3500)',
-  NASCAR:     'linear-gradient(135deg,#2d1500,#7a3500)',
-  space:      'linear-gradient(135deg,#0d0d2e,#1a1a5c)',
+const FALLBACK_GRADIENTS = {
+  top:    'linear-gradient(135deg,#0d0d0d,#1a1a2e)',
+  world:  'linear-gradient(135deg,#1a0505,#3d0f0f)',
+  tech:   'linear-gradient(135deg,#031520,#0a3a52)',
+  racing: 'linear-gradient(135deg,#1a0e00,#4a2c00)',
 };
 
 export const NewsView = () => {
-  const [cat, setCat]         = useState('all');
-  const [stories, setStories] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [refreshKey, setRefreshKey] = useState(0);
+  const [cat, setCat]         = useState('top');
+  const [articles, setArticles] = useState([]);
+  const [loading, setLoading]   = useState(true);
+  const cache = useRef({});
 
-  const fetchNews = useCallback(async (catId) => {
+  const fetchFeed = async (url, name) => {
+    const res = await fetch(R2J + encodeURIComponent(url)).then(r => r.json());
+    return (res.items ?? []).map(item => ({ ...item, _source: name }));
+  };
+
+  const load = async (catId, force = false) => {
+    if (cache.current[catId] && !force) {
+      setArticles(cache.current[catId]);
+      setLoading(false);
+      return;
+    }
     setLoading(true);
-    setStories([]);
-    const subs = CATEGORIES.find(c => c.id === catId)?.subs ?? ['worldnews'];
+    setArticles([]);
+    const sources = CATEGORIES.find(c => c.id === catId)?.sources ?? [];
     try {
-      const results = await Promise.all(
-        subs.map(sub =>
-          fetch(`https://www.reddit.com/r/${sub}/top.json?limit=8&t=day`)
-            .then(r => r.json())
-            .then(d => (d.data?.children ?? []).map(c => ({ ...c.data, _sub: sub })))
-            .catch(() => [])
-        )
-      );
-      // Interleave results and limit to 20
-      const interleaved = [];
-      const max = Math.max(...results.map(r => r.length));
-      for (let i = 0; i < max && interleaved.length < 20; i++) {
-        results.forEach(r => { if (r[i] && interleaved.length < 20) interleaved.push(r[i]); });
+      const all = await Promise.all(sources.map(s => fetchFeed(s.url, s.name).catch(() => [])));
+      // Interleave sources, limit 16
+      const merged = [];
+      const max = Math.max(...all.map(a => a.length));
+      for (let i = 0; i < max && merged.length < 16; i++) {
+        all.forEach(a => { if (a[i] && merged.length < 16) merged.push(a[i]); });
       }
-      setStories(interleaved);
-    } catch { setStories([]); }
+      cache.current[catId] = merged;
+      setArticles(merged);
+    } catch { setArticles([]); }
     finally { setLoading(false); }
-  }, []);
+  };
 
-  useEffect(() => { fetchNews(cat); }, [cat, fetchNews, refreshKey]);
+  useEffect(() => { load(cat); }, [cat]);
+
+  const refresh = () => {
+    delete cache.current[cat];
+    load(cat, true);
+  };
+
+  const fallback = FALLBACK_GRADIENTS[cat] ?? FALLBACK_GRADIENTS.top;
 
   return (
     <div className="news-page">
-
-      {/* Header */}
       <div className="page-header">
         <h1 className="page-title">News</h1>
-        <button
-          className={`icon-btn${loading ? ' spinning' : ''}`}
-          onClick={() => setRefreshKey(k => k + 1)}
-          disabled={loading}
-          title="Refresh"
-        >
+        <button className={`icon-btn${loading ? ' spinning' : ''}`} onClick={refresh} disabled={loading} title="Refresh">
           <RefreshCw size={17} />
         </button>
       </div>
 
-      {/* Category tabs */}
+      {/* Tabs */}
       <div className="news-tabs">
         {CATEGORIES.map(c => (
-          <button
-            key={c.id}
-            className={`news-tab${cat === c.id ? ' active' : ''}`}
-            style={cat === c.id ? { color: CAT_COLORS[c.id], borderColor: CAT_COLORS[c.id] + '44' } : {}}
-            onClick={() => setCat(c.id)}
-          >
+          <button key={c.id} className={`news-tab${cat === c.id ? ' active' : ''}`} onClick={() => setCat(c.id)}>
             {c.label}
           </button>
         ))}
@@ -112,59 +141,38 @@ export const NewsView = () => {
           <div key={i} className="news-card skeleton">
             <div className="news-img-wrap sk-img" />
             <div className="news-card-body">
-              <div className="sk-line tall" />
-              <div className="sk-line short" />
-              <div className="sk-line tiny" />
+              <div className="sk-line wide" />
+              <div className="sk-line medium" />
+              <div className="sk-line narrow" />
             </div>
           </div>
         ))}
 
-        {!loading && stories.map((s, i) => {
-          const img = getImage(s);
-          const subLabel = CAT_LABELS[s._sub] ?? s._sub;
-          const color = Object.values(CAT_COLORS).find(
-            (_, ci) => Object.keys(CAT_LABELS).filter(k => k === s._sub).length > 0
-          ) ?? '#a78bfa';
-
-          const catColor = s._sub.includes('war') || s._sub === 'worldnews' || s._sub === 'geopolitics' || s._sub === 'UkraineWarVideoReport'
-            ? CAT_COLORS.world
-            : s._sub === 'formula1' || s._sub === 'motorsports' || s._sub === 'NASCAR'
-            ? CAT_COLORS.racing
-            : s._sub === 'space'
-            ? '#a78bfa'
-            : CAT_COLORS.tech;
+        {!loading && articles.map((a, i) => {
+          const img   = getImage(a);
+          const color = SOURCE_COLORS[a._source] ?? '#8fa3b4';
 
           return (
-            <a
-              key={s.id ?? i}
-              href={s.url?.startsWith('http') ? s.url : `https://reddit.com${s.permalink}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="news-card"
-            >
-              {/* Image */}
-              <div
-                className="news-img-wrap"
-                style={{ background: CAT_GRADIENTS[s._sub] ?? 'var(--surface-3)' }}
-              >
-                {img && <img src={img} alt="" className="news-img" loading="lazy" />}
-                {!img && <div className="news-img-label">{subLabel}</div>}
+            <a key={i} href={a.link} target="_blank" rel="noopener noreferrer" className="news-card">
+              <div className="news-img-wrap" style={{ background: img ? undefined : fallback }}>
+                {img
+                  ? <img src={img} alt="" className="news-img" loading="lazy" />
+                  : <span className="news-img-label">{a._source}</span>
+                }
               </div>
-
-              {/* Body */}
               <div className="news-card-body">
-                <span className="news-badge" style={{ color: catColor, borderColor: catColor + '44', background: catColor + '15' }}>
-                  {subLabel}
+                <span className="news-source-badge" style={{ color, borderColor: color + '50', background: color + '18' }}>
+                  {a._source}
                 </span>
-                <p className="news-title">{s.title}</p>
-                <span className="news-time">{timeAgo(s.created_utc)}</span>
+                <p className="news-title">{a.title}</p>
+                <span className="news-time">{timeAgo(a.pubDate)}</span>
               </div>
             </a>
           );
         })}
 
-        {!loading && stories.length === 0 && (
-          <div className="news-empty">No stories found — try refreshing</div>
+        {!loading && articles.length === 0 && (
+          <p className="news-empty">Could not load articles — try refreshing</p>
         )}
       </div>
     </div>
