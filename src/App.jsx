@@ -9,6 +9,7 @@ import { NotesView } from './components/Notes/NotesView';
 import { DailyGoalsView } from './components/DailyGoals/DailyGoalsView';
 import { StreakView } from './components/Streak/StreakView';
 import { WeeklyReview } from './components/WeeklyReview/WeeklyReview';
+import { NewsView } from './components/News/NewsView';
 import { GoalPopup } from './components/DailyGoals/GoalPopup';
 import { useDailyGoals } from './hooks/useDailyGoals';
 import { useStreak } from './hooks/useStreak';
@@ -32,6 +33,7 @@ const AppInner = () => {
               <Route path="goals"     element={<DailyGoalsView />} />
               <Route path="streak"    element={<StreakView />} />
               <Route path="review"    element={<WeeklyReview />} />
+              <Route path="news"      element={<NewsView />} />
             </Route>
           </Routes>
         </RemindersProvider>
