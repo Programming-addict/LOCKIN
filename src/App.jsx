@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { PomodoroProvider } from './context/PomodoroContext';
 import { RemindersProvider } from './context/RemindersContext';
 import { AuthProvider } from './context/AuthContext';
+import { useAuth } from './context/AuthContext';
 import { Layout } from './components/Layout/Layout';
 import { PomodoroTimer } from './components/Pomodoro/PomodoroTimer';
 import { TodoList } from './components/Todo/TodoList';
@@ -10,16 +11,36 @@ import { DailyGoalsView } from './components/DailyGoals/DailyGoalsView';
 import { WeeklyReview } from './components/WeeklyReview/WeeklyReview';
 import { NewsView } from './components/News/NewsView';
 import { GoalPopup } from './components/DailyGoals/GoalPopup';
+import { LoginPage } from './components/Auth/LoginPage';
 import { useDailyGoals } from './hooks/useDailyGoals';
 import { useStreak } from './hooks/useStreak';
 import './components/shared.css';
 
-const AppInner = () => {
+const AppRoutes = () => {
+  const { user } = useAuth();
   const { goalsSet, setGoals, allDone } = useDailyGoals();
   const streak = useStreak(allDone);
 
+  // Firebase still checking auth state
+  if (user === undefined) {
+    return (
+      <div style={{
+        minHeight: '100vh', display: 'flex', alignItems: 'center',
+        justifyContent: 'center', background: 'var(--bg)', flexDirection: 'column', gap: 16,
+      }}>
+        <span style={{ fontSize: 32 }}>⚡</span>
+        <span style={{ fontFamily: 'var(--font-mono)', fontSize: 13, color: 'var(--text-muted)' }}>
+          Loading…
+        </span>
+      </div>
+    );
+  }
+
+  // Not signed in → show login page
+  if (!user) return <LoginPage />;
+
+  // Signed in → show app
   return (
-    <AuthProvider>
     <BrowserRouter>
       <PomodoroProvider>
         <RemindersProvider>
@@ -37,8 +58,13 @@ const AppInner = () => {
         </RemindersProvider>
       </PomodoroProvider>
     </BrowserRouter>
-    </AuthProvider>
   );
 };
+
+const AppInner = () => (
+  <AuthProvider>
+    <AppRoutes />
+  </AuthProvider>
+);
 
 export default AppInner;
