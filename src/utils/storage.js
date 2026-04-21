@@ -7,9 +7,15 @@ export const get = (key, fallback = null) => {
   }
 };
 
+// Sync callback — registered by AuthContext to push writes to Firestore
+let _onSet = null;
+export const registerSyncCallback = (cb) => { _onSet = cb; };
+export const unregisterSyncCallback = () => { _onSet = null; };
+
 export const set = (key, value) => {
   try {
     localStorage.setItem(key, JSON.stringify(value));
+    if (_onSet) _onSet(key, value);
   } catch {
     // storage full or unavailable
   }

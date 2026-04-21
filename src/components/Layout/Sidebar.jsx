@@ -2,6 +2,7 @@ import { NavLink } from 'react-router-dom';
 import { Timer, CheckSquare, Calendar, Target, Flame, BarChart2, Newspaper, Menu, X } from 'lucide-react';
 import { useState } from 'react';
 import { usePomodoroContext } from '../../context/PomodoroContext';
+import { AuthButton } from '../Auth/AuthButton';
 import './Sidebar.css';
 
 const NAV = [
@@ -49,6 +50,10 @@ export const Sidebar = ({ streak }) => {
           <Flame size={16} className="streak-flame" />
           <span className="streak-val">{streak.current}</span>
           <span className="streak-lbl">day streak</span>
+        </div>
+
+        <div className="sidebar-auth">
+          <AuthButton />
         </div>
       </aside>
 

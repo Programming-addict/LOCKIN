@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { PomodoroProvider } from './context/PomodoroContext';
 import { RemindersProvider } from './context/RemindersContext';
+import { AuthProvider } from './context/AuthContext';
 import { Layout } from './components/Layout/Layout';
 import { PomodoroTimer } from './components/Pomodoro/PomodoroTimer';
 import { TodoList } from './components/Todo/TodoList';
@@ -18,6 +19,7 @@ const AppInner = () => {
   const streak = useStreak(allDone);
 
   return (
+    <AuthProvider>
     <BrowserRouter>
       <PomodoroProvider>
         <RemindersProvider>
@@ -35,6 +37,7 @@ const AppInner = () => {
         </RemindersProvider>
       </PomodoroProvider>
     </BrowserRouter>
+    </AuthProvider>
   );
 };
 

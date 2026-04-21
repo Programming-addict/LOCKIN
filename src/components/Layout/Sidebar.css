@@ -122,6 +122,12 @@
   font-family: var(--font-display);
 }
 
+/* Auth footer */
+.sidebar-auth {
+  padding: 12px 16px 16px;
+  border-top: 1px solid var(--border);
+}
+
 /* Mobile toggle */
 .sidebar-toggle {
   display: none;
