@@ -80,6 +80,25 @@
 
 @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.2} }
 
+.lofi-header-right {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.lofi-header-play-btn {
+  color: var(--text-muted);
+  padding: 5px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-sm);
+  transition: color 0.15s, background 0.15s;
+}
+
+.lofi-header-play-btn:hover:not(:disabled) { color: var(--cyan); background: var(--cyan-dim); }
+.lofi-header-play-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
 .lofi-collapse-btn {
   color: var(--text-muted);
   padding: 4px;

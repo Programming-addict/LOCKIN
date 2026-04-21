@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { Play, Pause, SkipBack, SkipForward, Volume2, VolumeX, ChevronDown, ChevronUp, Music } from 'lucide-react';
+import { usePomodoroContext } from '../../context/PomodoroContext';
 import './LofiPlayer.css';
 
 const STATIONS = [
@@ -29,6 +30,8 @@ const loadYTApi = (cb) => {
 };
 
 export const LofiPlayer = () => {
+  const { running } = usePomodoroContext();
+
   const [expanded, setExpanded]   = useState(false);
   const [stationIdx, setStation]  = useState(0);
   const [playing, setPlaying]     = useState(false);
@@ -37,12 +40,17 @@ export const LofiPlayer = () => {
   const [ready, setReady]         = useState(false);
   const [loading, setLoading]     = useState(false);
 
-  const playerRef    = useRef(null);
-  const containerRef = useRef(null);
+  const playerRef       = useRef(null);
+  const containerRef    = useRef(null);
+  const playingRef      = useRef(false);
+  const timerStartedRef = useRef(false);
 
   const station = STATIONS[stationIdx];
 
-  // Boot YouTube IFrame API once
+  // Keep playingRef in sync for use inside effects without stale closures
+  useEffect(() => { playingRef.current = playing; }, [playing]);
+
+  // Boot YouTube IFrame API once — containerRef must be in DOM at this point
   useEffect(() => {
     loadYTApi(() => {
       if (!containerRef.current || playerRef.current) return;
@@ -76,11 +84,29 @@ export const LofiPlayer = () => {
     });
   }, []);
 
+  // Sync music with timer: auto-play on start, auto-stop on end (only if timer started it)
+  useEffect(() => {
+    if (!ready) return;
+    if (running) {
+      if (!playingRef.current) {
+        playerRef.current?.playVideo();
+        timerStartedRef.current = true;
+      }
+    } else {
+      if (timerStartedRef.current) {
+        playerRef.current?.pauseVideo();
+        timerStartedRef.current = false;
+      }
+    }
+  }, [running, ready]);
+
   const togglePlay = useCallback(() => {
     if (!ready || !playerRef.current) return;
-    if (playing) playerRef.current.pauseVideo();
-    else         playerRef.current.playVideo();
-  }, [ready, playing]);
+    // User-initiated control clears timer ownership
+    timerStartedRef.current = false;
+    if (playingRef.current) playerRef.current.pauseVideo();
+    else                    playerRef.current.playVideo();
+  }, [ready]);
 
   const changeStation = useCallback((idx) => {
     setStation(idx);
@@ -108,6 +134,12 @@ export const LofiPlayer = () => {
 
   return (
     <div className={`lofi-player ${expanded ? 'expanded' : ''} ${playing ? 'active' : ''}`}>
+      {/* Hidden YT player — always in DOM so the player initialises on mount */}
+      <div
+        ref={containerRef}
+        style={{ position: 'absolute', width: 1, height: 1, overflow: 'hidden', opacity: 0, pointerEvents: 'none' }}
+      />
+
       {/* Header row — always visible */}
       <div className="lofi-header" onClick={() => setExpanded(e => !e)}>
         <div className="lofi-header-left">
@@ -122,17 +154,29 @@ export const LofiPlayer = () => {
             </span>
           )}
         </div>
-        <button className="lofi-collapse-btn" onClick={e => { e.stopPropagation(); setExpanded(o => !o); }}>
-          {expanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
-        </button>
+        <div className="lofi-header-right">
+          <button
+            className="lofi-header-play-btn"
+            onClick={e => { e.stopPropagation(); togglePlay(); }}
+            disabled={!ready}
+            title={playing ? 'Pause music' : 'Play music'}
+          >
+            {loading && !expanded
+              ? <span className="lofi-spinner" style={{ width: 10, height: 10, borderWidth: 1.5 }} />
+              : playing
+                ? <Pause size={12} />
+                : <Play  size={12} />
+            }
+          </button>
+          <button className="lofi-collapse-btn" onClick={e => { e.stopPropagation(); setExpanded(o => !o); }}>
+            {expanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+          </button>
+        </div>
       </div>
 
       {/* Expanded body */}
       {expanded && (
         <div className="lofi-body">
-          {/* Hidden YT player div */}
-          <div ref={containerRef} style={{ position: 'absolute', width: 1, height: 1, overflow: 'hidden', opacity: 0, pointerEvents: 'none' }} />
-
           {/* Waveform animation */}
           <div className={`lofi-waveform ${playing ? 'playing' : ''}`}>
             {Array.from({ length: 20 }).map((_, i) => (

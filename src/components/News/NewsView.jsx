@@ -57,11 +57,9 @@ const timeAgo = (dateStr) => {
   return `${Math.floor(diff / 86400)}d ago`;
 };
 
-// Extract best image from rss2json item
 const getImage = (item) => {
   if (item.thumbnail && item.thumbnail.startsWith('http')) return item.thumbnail;
   if (item.enclosure?.link?.match(/\.(jpg|jpeg|png|webp)/i)) return item.enclosure.link;
-  // Try to extract from content/description
   const match = (item.content || item.description || '').match(/<img[^>]+src=["']([^"']+)["']/i);
   if (match) return match[1];
   return null;
@@ -74,29 +72,34 @@ const FALLBACK_GRADIENTS = {
   racing: 'linear-gradient(135deg,#1a0e00,#4a2c00)',
 };
 
+const fetchFeed = async (url, name) => {
+  const res = await fetch(R2J + encodeURIComponent(url));
+  if (!res.ok) return [];
+  const data = await res.json();
+  if (data.status !== 'ok') return [];
+  return (data.items ?? []).map(item => ({ ...item, _source: name }));
+};
+
 export const NewsView = () => {
-  const [cat, setCat]         = useState('top');
+  const [cat, setCat]           = useState('top');
   const [articles, setArticles] = useState([]);
   const [loading, setLoading]   = useState(true);
+  const [error, setError]       = useState(false);
   const cache = useRef({});
-
-  const fetchFeed = async (url, name) => {
-    const res = await fetch(R2J + encodeURIComponent(url)).then(r => r.json());
-    return (res.items ?? []).map(item => ({ ...item, _source: name }));
-  };
 
   const load = async (catId, force = false) => {
     if (cache.current[catId] && !force) {
       setArticles(cache.current[catId]);
+      setError(false);
       setLoading(false);
       return;
     }
     setLoading(true);
     setArticles([]);
+    setError(false);
     const sources = CATEGORIES.find(c => c.id === catId)?.sources ?? [];
     try {
       const all = await Promise.all(sources.map(s => fetchFeed(s.url, s.name).catch(() => [])));
-      // Interleave sources, limit 16
       const merged = [];
       const max = Math.max(...all.map(a => a.length));
       for (let i = 0; i < max && merged.length < 16; i++) {
@@ -104,8 +107,13 @@ export const NewsView = () => {
       }
       cache.current[catId] = merged;
       setArticles(merged);
-    } catch { setArticles([]); }
-    finally { setLoading(false); }
+      if (merged.length === 0) setError(true);
+    } catch {
+      setError(true);
+      setArticles([]);
+    } finally {
+      setLoading(false);
+    }
   };
 
   useEffect(() => { load(cat); }, [cat]);
@@ -172,7 +180,9 @@ export const NewsView = () => {
         })}
 
         {!loading && articles.length === 0 && (
-          <p className="news-empty">Could not load articles — try refreshing</p>
+          <p className="news-empty">
+            {error ? 'Could not load articles — try refreshing' : 'No articles found'}
+          </p>
         )}
       </div>
     </div>
