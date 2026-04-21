@@ -5,9 +5,7 @@ import { Layout } from './components/Layout/Layout';
 import { PomodoroTimer } from './components/Pomodoro/PomodoroTimer';
 import { TodoList } from './components/Todo/TodoList';
 import { CalendarView } from './components/Calendar/CalendarView';
-import { NotesView } from './components/Notes/NotesView';
 import { DailyGoalsView } from './components/DailyGoals/DailyGoalsView';
-import { StreakView } from './components/Streak/StreakView';
 import { WeeklyReview } from './components/WeeklyReview/WeeklyReview';
 import { NewsView } from './components/News/NewsView';
 import { GoalPopup } from './components/DailyGoals/GoalPopup';
@@ -26,14 +24,12 @@ const AppInner = () => {
           {!goalsSet && <GoalPopup onSave={setGoals} />}
           <Routes>
             <Route element={<Layout streak={streak} />}>
-              <Route index            element={<PomodoroTimer />} />
-              <Route path="todos"     element={<TodoList />} />
-              <Route path="calendar"  element={<CalendarView />} />
-              <Route path="notes"     element={<NotesView />} />
-              <Route path="goals"     element={<DailyGoalsView />} />
-              <Route path="streak"    element={<StreakView />} />
-              <Route path="review"    element={<WeeklyReview />} />
-              <Route path="news"      element={<NewsView />} />
+              <Route index           element={<PomodoroTimer />} />
+              <Route path="todos"    element={<TodoList />} />
+              <Route path="calendar" element={<CalendarView />} />
+              <Route path="goals"    element={<DailyGoalsView />} />
+              <Route path="review"   element={<WeeklyReview />} />
+              <Route path="news"     element={<NewsView />} />
             </Route>
           </Routes>
         </RemindersProvider>

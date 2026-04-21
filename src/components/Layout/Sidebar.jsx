@@ -1,5 +1,5 @@
 import { NavLink } from 'react-router-dom';
-import { Timer, CheckSquare, Calendar, Target, Flame, StickyNote, BarChart2, Newspaper, Menu, X } from 'lucide-react';
+import { Timer, CheckSquare, Calendar, Target, Flame, BarChart2, Newspaper, Menu, X } from 'lucide-react';
 import { useState } from 'react';
 import { usePomodoroContext } from '../../context/PomodoroContext';
 import './Sidebar.css';
@@ -8,9 +8,7 @@ const NAV = [
   { to: '/',        icon: Timer,       label: 'Pomodoro'      },
   { to: '/todos',   icon: CheckSquare, label: 'To-Do'         },
   { to: '/calendar',icon: Calendar,    label: 'Calendar'      },
-  { to: '/notes',   icon: StickyNote,  label: 'Notes'         },
   { to: '/goals',   icon: Target,      label: 'Daily Goals'   },
-  { to: '/streak',  icon: Flame,       label: 'Streak'        },
   { to: '/review',  icon: BarChart2,   label: 'Weekly Review' },
   { to: '/news',    icon: Newspaper,   label: 'News'          },
 ];
@@ -42,7 +40,6 @@ export const Sidebar = ({ streak }) => {
             >
               <Icon size={17} />
               <span>{label}</span>
-              {/* Live dot when pomodoro is running */}
               {to === '/' && running && <span className="nav-indicator" />}
             </NavLink>
           ))}

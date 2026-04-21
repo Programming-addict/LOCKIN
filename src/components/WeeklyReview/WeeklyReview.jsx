@@ -1,11 +1,12 @@
-import { ChevronLeft, ChevronRight, Clock, Zap, CheckSquare, Target, Flame, TrendingUp } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Clock, Zap, CheckSquare, Target, Flame, TrendingUp, Trophy, Calendar } from 'lucide-react';
 import { useWeeklyStats } from '../../hooks/useWeeklyStats';
+import { useStreak } from '../../hooks/useStreak';
+import { useDailyGoals } from '../../hooks/useDailyGoals';
 import './WeeklyReview.css';
 
 const fmtHours = (mins) => {
   if (mins < 60) return `${mins}m`;
-  const h = Math.floor(mins / 60);
-  const m = mins % 60;
+  const h = Math.floor(mins / 60), m = mins % 60;
   return m > 0 ? `${h}h ${m}m` : `${h}h`;
 };
 
@@ -13,14 +14,17 @@ export const WeeklyReview = () => {
   const {
     dayStats, today,
     totalSessions, totalMins, totalTodos, daysWithAllGoals,
-    maxSessions, streak, isCurrentWeek, canGoNext,
+    maxSessions, isCurrentWeek, canGoNext,
     weekLabel, reflection, saveReflection,
     prevWeek, nextWeek,
   } = useWeeklyStats();
 
+  const { completedCount, allDone } = useDailyGoals();
+  const streak = useStreak(allDone);
+
   return (
     <div className="wr-page">
-      {/* Header */}
+
       <div className="page-header">
         <h1 className="page-title">Weekly Review</h1>
       </div>
@@ -69,8 +73,8 @@ export const WeeklyReview = () => {
         </div>
         <div className="wr-chart">
           {dayStats.map((d) => {
-            const pct      = maxSessions > 0 ? (d.sessions / maxSessions) * 100 : 0;
-            const isToday  = d.key === today;
+            const pct     = maxSessions > 0 ? (d.sessions / maxSessions) * 100 : 0;
+            const isToday = d.key === today;
             return (
               <div key={d.key} className={`wr-bar-col ${isToday ? 'today' : ''}`}>
                 <div className="wr-bar-count">{d.sessions > 0 ? d.sessions : ''}</div>
@@ -119,13 +123,57 @@ export const WeeklyReview = () => {
         </div>
       </div>
 
-      {/* Streak callout */}
-      <div className="wr-streak-card">
-        <Flame size={22} className={streak.current > 0 ? 'flame-on' : 'flame-off'} />
-        <div className="wr-streak-text">
-          <div className="wr-streak-big">{streak.current} day streak</div>
-          <div className="wr-streak-sub">Best ever: {streak.best} days</div>
+      {/* ── Streak Section ── */}
+      <div className="wr-section wr-streak-section">
+        <div className="wr-section-header">
+          <Flame size={15} className={streak.current > 0 ? 'flame-on' : ''} />
+          <span>Streak</span>
         </div>
+
+        <div className="wr-streak-hero">
+          <Flame size={48} className={`wr-hero-flame ${streak.current > 0 ? 'active' : ''}`} />
+          <div className="wr-streak-num">{streak.current}</div>
+          <div className="wr-streak-unit">day streak</div>
+        </div>
+
+        <div className="wr-streak-stats">
+          <div className="wr-streak-stat">
+            <Trophy size={16} className="ss-gold" />
+            <div className="wr-ss-val">{streak.best}</div>
+            <div className="wr-ss-lbl">Best Ever</div>
+          </div>
+          <div className="wr-streak-stat">
+            <Target size={16} className="ss-cyan" />
+            <div className="wr-ss-val">{completedCount}/3</div>
+            <div className="wr-ss-lbl">Today's Goals</div>
+          </div>
+          <div className="wr-streak-stat">
+            <Calendar size={16} className="ss-blue" />
+            <div className="wr-ss-val">
+              {streak.lastDate
+                ? new Date(streak.lastDate + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+                : '—'}
+            </div>
+            <div className="wr-ss-lbl">Last Done</div>
+          </div>
+        </div>
+
+        <div className={`wr-today-status ${allDone ? 'done' : 'pending'}`}>
+          {allDone
+            ? "✅ Today's goals complete — streak maintained!"
+            : '⏳ Complete all 3 daily goals today to keep your streak'}
+        </div>
+
+        {streak.current > 0 && (
+          <div className="wr-milestones">
+            {[3, 7, 14, 30, 60, 100].map(m => (
+              <div key={m} className={`wr-milestone ${streak.current >= m ? 'reached' : ''}`}>
+                <span className="wr-ms-num">{m}</span>
+                <span className="wr-ms-lbl">days</span>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Reflection */}
@@ -143,6 +191,7 @@ export const WeeklyReview = () => {
         />
         <div className="wr-reflection-hint">Auto-saved · Stored locally</div>
       </div>
+
     </div>
   );
 };
