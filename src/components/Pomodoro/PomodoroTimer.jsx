@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { Play, Pause, RotateCcw, Settings } from 'lucide-react';
+import { Play, Pause, RotateCcw, Settings, SkipForward } from 'lucide-react';
 import { usePomodoroContext } from '../../context/PomodoroContext';
 import { CircularRing } from './CircularRing';
 import { LofiPlayer } from './LofiPlayer';
@@ -7,7 +7,7 @@ import { Confetti } from '../Confetti';
 import './Pomodoro.css';
 
 export const PomodoroTimer = () => {
-  const { mode, seconds, running, toggle, reset, progress, sessionCount, settings, updateSettings } =
+  const { mode, seconds, running, toggle, reset, skipBreak, progress, sessionCount, settings, updateSettings } =
     usePomodoroContext();
 
   const [showSettings, setShowSettings] = useState(false);
@@ -79,7 +79,14 @@ export const PomodoroTimer = () => {
             {running ? <Pause size={28} /> : <Play size={28} />}
           </button>
 
-          <div style={{ width: 48 }} />
+          {/* Skip break — only visible during break mode */}
+          {mode === 'break' ? (
+            <button className="icon-btn-lg skip-break-btn" onClick={skipBreak} title="Skip break">
+              <SkipForward size={22} />
+            </button>
+          ) : (
+            <div style={{ width: 48 }} />
+          )}
         </div>
 
         <div className="pomo-meta">

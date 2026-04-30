@@ -8,11 +8,22 @@ const STATE_KEY = 'pomo_state';
 const loadPersistedState = (settings) => {
   const saved = get(STATE_KEY, null);
   if (!saved) return { mode: 'work', seconds: settings.work * 60, total: settings.work * 60 };
+
   if (saved.running && saved.startedAt) {
     const elapsed   = Math.floor((Date.now() - saved.startedAt) / 1000);
     const remaining = Math.max(0, saved.seconds - elapsed);
+    // If break elapsed while app was closed → go straight to work
+    if (remaining === 0) {
+      return { mode: 'work', seconds: settings.work * 60, total: settings.work * 60 };
+    }
     return { mode: saved.mode, seconds: remaining, total: saved.total };
   }
+
+  // If app was closed mid-break (paused) → always reset to work on next open
+  if (saved.mode === 'break') {
+    return { mode: 'work', seconds: settings.work * 60, total: settings.work * 60 };
+  }
+
   return { mode: saved.mode, seconds: saved.seconds, total: saved.total };
 };
 
@@ -136,6 +147,18 @@ export const usePomodoro = () => {
 
   const toggle = () => setRunning(r => !r);
 
+  const skipBreak = useCallback(() => {
+    clearInterval(intervalRef.current);
+    setRunning(false);
+    startedAtRef.current = null;
+    const secs = get('pomo_settings', DEFAULTS).work * 60;
+    totalRef.current   = secs;
+    secondsRef.current = secs;
+    setSeconds(secs);
+    setMode('work');
+    set(STATE_KEY, { mode: 'work', seconds: secs, total: secs, running: false });
+  }, []);
+
   const reset = useCallback(() => {
     setRunning(false);
     clearInterval(intervalRef.current);
@@ -163,5 +186,5 @@ export const usePomodoro = () => {
 
   const progress = totalRef.current > 0 ? 1 - seconds / totalRef.current : 0;
 
-  return { mode, seconds, running, toggle, reset, progress, sessionCount, settings, updateSettings };
+  return { mode, seconds, running, toggle, reset, skipBreak, progress, sessionCount, settings, updateSettings };
 };

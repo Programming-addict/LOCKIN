@@ -7,23 +7,23 @@ export const CircularRing = ({ progress, mode, seconds, running }) => {
   const circ   = 2 * Math.PI * r;
   const offset = circ * (1 - progress);
 
-  const isWork    = mode === 'work';
-  const color     = isWork ? '#0a84ff' : '#30d158';
-  const glowColor = isWork ? 'rgba(10,132,255,0.65)'  : 'rgba(48,209,88,0.65)';
-  const softColor = isWork ? 'rgba(10,132,255,0.18)'  : 'rgba(48,209,88,0.18)';
+  const isWork = mode === 'work';
+  const color  = isWork ? '#0a84ff' : '#30d158';
+  const glow   = isWork ? 'rgba(10,132,255,0.55)' : 'rgba(48,209,88,0.55)';
+  const soft   = isWork ? 'rgba(10,132,255,0.12)' : 'rgba(48,209,88,0.12)';
 
-  // Endpoint dot — position on the arc's trailing edge
+  // Endpoint dot position
   const endAngle = -Math.PI / 2 + progress * 2 * Math.PI;
-  const dotX = size / 2 + r * Math.cos(endAngle);
-  const dotY = size / 2 + r * Math.sin(endAngle);
-  const showDot = progress > 0.015 && progress < 0.985;
+  const dotX     = size / 2 + r * Math.cos(endAngle);
+  const dotY     = size / 2 + r * Math.sin(endAngle);
+  const showDot  = progress > 0.015 && progress < 0.985;
 
-  // 60 tick marks (minor every second, major every 5)
+  // 60 tick marks — major every 5
   const ticks = Array.from({ length: 60 }, (_, i) => {
-    const a = (i / 60) * 2 * Math.PI - Math.PI / 2;
+    const a       = (i / 60) * 2 * Math.PI - Math.PI / 2;
     const isMajor = i % 5 === 0;
-    const outerR  = size / 2 - 3;
-    const innerR  = outerR - (isMajor ? 9 : 4);
+    const outerR  = size / 2 - 4;
+    const innerR  = outerR - (isMajor ? 8 : 4);
     return {
       x1: size / 2 + innerR * Math.cos(a),
       y1: size / 2 + innerR * Math.sin(a),
@@ -33,14 +33,14 @@ export const CircularRing = ({ progress, mode, seconds, running }) => {
     };
   });
 
-  // Stable random floating particles (fixed per mount)
+  // Fixed floating particles per mount
   const particlesRef = useRef(
-    Array.from({ length: 6 }, (_, i) => ({
-      angle:  (i / 6) * 360,
-      radius: 90 + Math.random() * 40,
-      size:   Math.random() * 3 + 2,
-      delay:  i * 0.55,
-      dur:    2.8 + Math.random() * 1.4,
+    Array.from({ length: 5 }, (_, i) => ({
+      angle: (i / 5) * 360 + 36,
+      radius: 88 + (i % 3) * 14,
+      size:   2 + (i % 3),
+      delay:  i * 0.6,
+      dur:    2.6 + (i % 2) * 1.2,
     }))
   );
 
@@ -49,17 +49,17 @@ export const CircularRing = ({ progress, mode, seconds, running }) => {
 
   return (
     <div className={`ring-wrap ${running ? 'ring-running' : ''}`}>
-      <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
+      <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} style={{ overflow: 'visible' }}>
         <defs>
-          <filter id="ring-glow" x="-40%" y="-40%" width="180%" height="180%">
-            <feGaussianBlur stdDeviation="3.5" result="blur" />
+          <filter id="arc-glow" x="-30%" y="-30%" width="160%" height="160%">
+            <feGaussianBlur stdDeviation="3" result="blur" />
             <feMerge>
               <feMergeNode in="blur" />
               <feMergeNode in="SourceGraphic" />
             </feMerge>
           </filter>
-          <filter id="dot-glow" x="-120%" y="-120%" width="340%" height="340%">
-            <feGaussianBlur stdDeviation="5" result="blur" />
+          <filter id="dot-glow" x="-100%" y="-100%" width="300%" height="300%">
+            <feGaussianBlur stdDeviation="4.5" result="blur" />
             <feMerge>
               <feMergeNode in="blur" />
               <feMergeNode in="SourceGraphic" />
@@ -67,39 +67,26 @@ export const CircularRing = ({ progress, mode, seconds, running }) => {
           </filter>
         </defs>
 
-        {/* ── Tick marks ── */}
+        {/* Tick marks */}
         {ticks.map((t, i) => (
           <line
             key={i}
             x1={t.x1} y1={t.y1} x2={t.x2} y2={t.y2}
-            stroke={t.major ? 'rgba(255,255,255,0.2)' : 'rgba(255,255,255,0.07)'}
+            stroke={t.major ? 'rgba(255,255,255,0.18)' : 'rgba(255,255,255,0.06)'}
             strokeWidth={t.major ? 1.5 : 0.75}
             strokeLinecap="round"
           />
         ))}
 
-        {/* ── Track ring ── */}
+        {/* Track */}
         <circle
           cx={size / 2} cy={size / 2} r={r}
           fill="none"
-          stroke="rgba(255,255,255,0.07)"
+          stroke="rgba(255,255,255,0.06)"
           strokeWidth={stroke}
         />
 
-        {/* ── Soft glow halo behind arc ── */}
-        <circle
-          cx={size / 2} cy={size / 2} r={r}
-          fill="none"
-          stroke={softColor}
-          strokeWidth={stroke + 10}
-          strokeDasharray={circ}
-          strokeDashoffset={offset}
-          strokeLinecap="round"
-          transform={`rotate(-90 ${size / 2} ${size / 2})`}
-          style={{ transition: 'stroke-dashoffset 0.9s linear, stroke 0.5s' }}
-        />
-
-        {/* ── Progress arc ── */}
+        {/* Progress arc */}
         <circle
           cx={size / 2} cy={size / 2} r={r}
           fill="none"
@@ -109,24 +96,22 @@ export const CircularRing = ({ progress, mode, seconds, running }) => {
           strokeDashoffset={offset}
           strokeLinecap="round"
           transform={`rotate(-90 ${size / 2} ${size / 2})`}
-          filter="url(#ring-glow)"
+          filter="url(#arc-glow)"
           style={{ transition: 'stroke-dashoffset 0.9s linear, stroke 0.5s' }}
         />
 
-        {/* ── Endpoint glow dot ── */}
+        {/* Endpoint glow dot */}
         {showDot && (
           <>
-            <circle cx={dotX} cy={dotY} r={stroke / 2 + 5} fill={softColor} />
-            <circle
-              cx={dotX} cy={dotY} r={stroke / 2 + 1.5}
-              fill={color}
-              filter="url(#dot-glow)"
-            />
+            {/* Soft outer halo — only at the dot, not the whole arc */}
+            <circle cx={dotX} cy={dotY} r={stroke / 2 + 4} fill={soft} />
+            {/* Bright core dot */}
+            <circle cx={dotX} cy={dotY} r={stroke / 2 + 1.5} fill={color} filter="url(#dot-glow)" />
           </>
         )}
       </svg>
 
-      {/* ── Floating particles (only when running) ── */}
+      {/* Floating particles while running */}
       {running && (
         <div className="ring-particles" aria-hidden="true">
           {particlesRef.current.map((p, i) => (
@@ -137,8 +122,8 @@ export const CircularRing = ({ progress, mode, seconds, running }) => {
                 '--delay':  `${p.delay}s`,
                 '--dur':    `${p.dur}s`,
                 '--pcolor': color,
-                '--px':     `${Math.cos((p.angle * Math.PI) / 180) * p.radius + size / 2}px`,
-                '--py':     `${Math.sin((p.angle * Math.PI) / 180) * p.radius + size / 2}px`,
+                '--px': `${Math.cos((p.angle * Math.PI) / 180) * p.radius + size / 2}px`,
+                '--py': `${Math.sin((p.angle * Math.PI) / 180) * p.radius + size / 2}px`,
                 width:  `${p.size}px`,
                 height: `${p.size}px`,
               }}
@@ -147,7 +132,7 @@ export const CircularRing = ({ progress, mode, seconds, running }) => {
         </div>
       )}
 
-      {/* ── Center text ── */}
+      {/* Center text */}
       <div className="ring-center">
         <div className="ring-time" style={{ color }}>{mins}:{secs}</div>
         <div className="ring-mode">{isWork ? 'FOCUS' : 'BREAK'}</div>

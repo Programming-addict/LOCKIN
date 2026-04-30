@@ -121,34 +121,35 @@
   transition: color 0.5s;
 }
 
-/* ring-running: add a subtle rotating border glow */
+/* ring-running: clean dual-pulse emanation — no sharp edges */
+.ring-wrap.ring-running::before,
 .ring-wrap.ring-running::after {
   content: '';
   position: absolute;
-  inset: -8px;
+  inset: 0;
   border-radius: 50%;
-  background: conic-gradient(
-    from 0deg,
-    transparent 70%,
-    rgba(10,132,255,0.15) 85%,
-    rgba(10,132,255,0.06) 100%
-  );
-  animation: halo-spin 8s linear infinite;
+  border: 1.5px solid rgba(10,132,255,0.38);
   pointer-events: none;
+  animation: ring-emanate 2.8s ease-out infinite;
 }
 
+.ring-wrap.ring-running::after {
+  border-width: 1px;
+  border-color: rgba(10,132,255,0.2);
+  animation-delay: 1.4s;
+}
+
+/* Break mode — green pulses */
+.pomodoro-card.mode-break .ring-wrap.ring-running::before {
+  border-color: rgba(48,209,88,0.38);
+}
 .pomodoro-card.mode-break .ring-wrap.ring-running::after {
-  background: conic-gradient(
-    from 0deg,
-    transparent 70%,
-    rgba(48,209,88,0.15) 85%,
-    rgba(48,209,88,0.06) 100%
-  );
+  border-color: rgba(48,209,88,0.2);
 }
 
-@keyframes halo-spin {
-  from { transform: rotate(0deg);   }
-  to   { transform: rotate(360deg); }
+@keyframes ring-emanate {
+  0%   { transform: scale(1);    opacity: 1; }
+  100% { transform: scale(1.2);  opacity: 0; }
 }
 
 /* Tick animation — digits "pop" on each second */
@@ -278,6 +279,22 @@
 }
 
 .pomo-side-btn:hover { background: var(--surface-3); color: var(--text-soft); }
+
+/* Skip break button */
+.skip-break-btn {
+  color: var(--green);
+  animation: slide-right 0.25s var(--spring) both;
+}
+
+.skip-break-btn:hover {
+  background: var(--green-dim) !important;
+  color: var(--green) !important;
+}
+
+@keyframes slide-right {
+  from { opacity: 0; transform: translateX(-8px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
 
 /* ── Stats strip ── */
 .pomo-meta {
