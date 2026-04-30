@@ -1,17 +1,49 @@
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Play, Pause, RotateCcw, Settings } from 'lucide-react';
 import { usePomodoroContext } from '../../context/PomodoroContext';
 import { CircularRing } from './CircularRing';
 import { LofiPlayer } from './LofiPlayer';
+import { Confetti } from '../Confetti';
 import './Pomodoro.css';
 
 export const PomodoroTimer = () => {
-  const { mode, seconds, running, toggle, reset, progress, sessionCount, settings, updateSettings } = usePomodoroContext();
+  const { mode, seconds, running, toggle, reset, progress, sessionCount, settings, updateSettings } =
+    usePomodoroContext();
+
   const [showSettings, setShowSettings] = useState(false);
-  const [draft, setDraft] = useState(settings);
+  const [draft, setDraft]               = useState(settings);
+
+  /* ── Confetti on session complete ── */
+  const prevSession = useRef(sessionCount);
+  const [burst, setBurst] = useState(false);
+
+  useEffect(() => {
+    if (sessionCount > prevSession.current) {
+      setBurst(false);
+      // Small timeout to let React reset the prop before re-triggering
+      setTimeout(() => setBurst(true), 30);
+    }
+    prevSession.current = sessionCount;
+  }, [sessionCount]);
+
+  /* ── Magnetic play button ── */
+  const playRef = useRef(null);
+
+  const onPlayMouseMove = (e) => {
+    const btn  = playRef.current;
+    if (!btn) return;
+    const rect = btn.getBoundingClientRect();
+    const x    = (e.clientX - rect.left - rect.width  / 2) * 0.35;
+    const y    = (e.clientY - rect.top  - rect.height / 2) * 0.35;
+    btn.style.transform = `translate(${x}px, ${y}px) scale(1.07)`;
+  };
+
+  const onPlayMouseLeave = () => {
+    if (playRef.current) playRef.current.style.transform = '';
+  };
 
   const saveSettings = () => {
-    const w = Math.max(1, Math.min(60, +draft.work || 25));
+    const w = Math.max(1, Math.min(60, +draft.work  || 25));
     const b = Math.max(1, Math.min(30, +draft.break || 5));
     updateSettings({ work: w, break: b });
     setShowSettings(false);
@@ -19,6 +51,8 @@ export const PomodoroTimer = () => {
 
   return (
     <div className="pomodoro-page">
+      <Confetti trigger={burst} origin={{ x: 0.5, y: 0.35 }} />
+
       <div className="page-header">
         <h1 className="page-title">Pomodoro Timer</h1>
         <button className="icon-btn" onClick={() => { setDraft(settings); setShowSettings(true); }}>
@@ -26,22 +60,32 @@ export const PomodoroTimer = () => {
         </button>
       </div>
 
-      <div className={`pomodoro-card mode-${mode}`}>
-        <CircularRing progress={progress} mode={mode} seconds={seconds} />
+      <div className={`pomodoro-card mode-${mode} ${running ? 'running' : ''}`}>
+        <CircularRing progress={progress} mode={mode} seconds={seconds} running={running} />
 
         <div className="pomo-controls">
           <button className="icon-btn-lg" onClick={reset} title="Reset">
             <RotateCcw size={22} />
           </button>
-          <button className={`pomo-play-btn ${mode === 'break' ? 'break-mode' : ''}`} onClick={toggle}>
+
+          {/* Magnetic play button */}
+          <button
+            ref={playRef}
+            className={`pomo-play-btn ${mode === 'break' ? 'break-mode' : ''} ${running ? 'running' : ''}`}
+            onClick={toggle}
+            onMouseMove={onPlayMouseMove}
+            onMouseLeave={onPlayMouseLeave}
+          >
             {running ? <Pause size={28} /> : <Play size={28} />}
           </button>
+
           <div style={{ width: 48 }} />
         </div>
 
         <div className="pomo-meta">
           <div className="pomo-stat">
-            <span className="stat-val">{sessionCount}</span>
+            {/* key re-mounts the span → triggers count-pop animation */}
+            <span key={sessionCount} className="stat-val stat-pop">{sessionCount}</span>
             <span className="stat-lbl">sessions today</span>
           </div>
           <div className="pomo-divider" />
@@ -82,7 +126,7 @@ export const PomodoroTimer = () => {
             />
 
             <div className="modal-actions">
-              <button className="btn-ghost" onClick={() => setShowSettings(false)}>Cancel</button>
+              <button className="btn-ghost"   onClick={() => setShowSettings(false)}>Cancel</button>
               <button className="btn-primary" onClick={saveSettings}>Save</button>
             </div>
           </div>

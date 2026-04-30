@@ -9,7 +9,7 @@ const loadToday = () => {
   const data  = get(STORAGE_KEY, {});
   const today = todayKey();
   if (data.date === today) return data;
-  return { date: today, goals: ['', '', ''], completed: [false, false, false], set: false };
+  return { date: today, goals: [], completed: [], set: true }; // Empty by default, no popup needed
 };
 
 const writeHistory = (date, goals, completed) => {
@@ -42,6 +42,25 @@ export const useDailyGoals = () => {
     persist({ ...state, goals, set: true });
   }, [state, persist]);
 
+  const addGoal = useCallback(() => {
+    const next = { ...state, goals: [...state.goals, ''], completed: [...state.completed, false] };
+    persist(next);
+  }, [state, persist]);
+
+  const updateGoal = useCallback((index, text) => {
+    const goals = [...state.goals];
+    goals[index] = text;
+    const next = { ...state, goals };
+    persist(next);
+  }, [state, persist]);
+
+  const deleteGoal = useCallback((index) => {
+    const goals = state.goals.filter((_, i) => i !== index);
+    const completed = state.completed.filter((_, i) => i !== index);
+    const next = { ...state, goals, completed };
+    persist(next);
+  }, [state, persist]);
+
   const toggleGoal = useCallback((index) => {
     const completed = [...state.completed];
     completed[index] = !completed[index];
@@ -53,16 +72,22 @@ export const useDailyGoals = () => {
     }
   }, [state, celebrated, persist]);
 
-  const completedCount = state.completed.filter(Boolean).length;
-  const allDone        = completedCount === 3;
+  const filledGoals = state.goals.filter(g => g.trim().length > 0);
+  const filledCount = filledGoals.length;
+  const completedCount = state.completed.filter((c, i) => c && state.goals[i].trim().length > 0).length;
+  const allDone = filledCount > 0 && completedCount === filledCount;
 
   return {
     goals:     state.goals,
     completed: state.completed,
     goalsSet:  state.set,
     setGoals,
+    addGoal,
+    updateGoal,
+    deleteGoal,
     toggleGoal,
     completedCount,
     allDone,
+    filledCount,
   };
 };

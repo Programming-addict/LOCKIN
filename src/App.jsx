@@ -10,15 +10,14 @@ import { CalendarView } from './components/Calendar/CalendarView';
 import { DailyGoalsView } from './components/DailyGoals/DailyGoalsView';
 import { WeeklyReview } from './components/WeeklyReview/WeeklyReview';
 import { NewsView } from './components/News/NewsView';
-import { GoalPopup } from './components/DailyGoals/GoalPopup';
 import { LoginPage } from './components/Auth/LoginPage';
-import { useDailyGoals } from './hooks/useDailyGoals';
 import { useStreak } from './hooks/useStreak';
+import { useDailyGoals } from './hooks/useDailyGoals';
 import './components/shared.css';
 
 const AppRoutes = () => {
   const { user } = useAuth();
-  const { goalsSet, setGoals, allDone } = useDailyGoals();
+  const { allDone } = useDailyGoals();
   const streak = useStreak(allDone);
 
   // Firebase still checking auth state
@@ -39,12 +38,11 @@ const AppRoutes = () => {
   // Not signed in → show login page
   if (!user) return <LoginPage />;
 
-  // Signed in → show app
+  // Signed in → show app (no popup, goals are added on the goals page)
   return (
     <BrowserRouter>
       <PomodoroProvider>
         <RemindersProvider>
-          {!goalsSet && <GoalPopup onSave={setGoals} />}
           <Routes>
             <Route element={<Layout streak={streak} />}>
               <Route index           element={<PomodoroTimer />} />

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Plus, Trash2, Check, RefreshCw } from 'lucide-react';
+import { Plus, Trash2, RefreshCw } from 'lucide-react';
 import { useTodos } from '../../hooks/useTodos';
 import './Todo.css';
 
@@ -36,13 +36,11 @@ export const TodoList = () => {
         <span className="badge">{todos.filter(t => !t.completed).length} active</span>
       </div>
 
-      {/* Weekly reset notice */}
       <div className="todo-reset-notice">
         <RefreshCw size={11} />
         Completed tasks auto-clear every Monday · Next reset: {nextResetLabel()}
       </div>
 
-      {/* Add form */}
       <form className="todo-form" onSubmit={submit}>
         <input
           className="field-input"
@@ -67,7 +65,6 @@ export const TodoList = () => {
         </div>
       </form>
 
-      {/* Filters */}
       <div className="filter-tabs">
         {FILTERS.map(f => (
           <button key={f} className={`filter-tab ${filter === f ? 'active' : ''}`} onClick={() => setFilter(f)}>
@@ -79,19 +76,35 @@ export const TodoList = () => {
         ))}
       </div>
 
-      {/* List */}
       <div className="todo-list">
         {visible.length === 0 && (
           <div className="empty-state">No {filter === 'all' ? '' : filter} tasks</div>
         )}
         {visible.map(todo => (
-          <div key={todo.id} className={`todo-item ${todo.completed ? 'done' : ''}`}>
+          <div
+            key={todo.id}
+            className={`todo-item ${todo.completed ? 'done' : ''}`}
+            data-priority={todo.priority}
+          >
             <button
               className="todo-check"
               onClick={() => toggleTodo(todo.id)}
               style={{ borderColor: PRIORITY[todo.priority] }}
             >
-              {todo.completed && <Check size={12} color={PRIORITY[todo.priority]} />}
+              {todo.completed && (
+                <svg
+                  className="check-draw"
+                  width="13" height="13"
+                  viewBox="0 0 13 13"
+                  fill="none"
+                  stroke={PRIORITY[todo.priority]}
+                  strokeWidth="2.2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <polyline points="1.5,6.5 5,10 11.5,2.5" />
+                </svg>
+              )}
             </button>
             <div className="todo-body">
               <span className="todo-text">{todo.text}</span>

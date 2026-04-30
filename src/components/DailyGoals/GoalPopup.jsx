@@ -11,11 +11,12 @@ export const GoalPopup = ({ onSave }) => {
     setGoals(next);
   };
 
-  const allFilled = goals.every(g => g.trim().length > 0);
+  const filledGoals = goals.filter(g => g.trim().length > 0);
+  const hasAtLeastOne = filledGoals.length > 0;
 
   const submit = (e) => {
     e.preventDefault();
-    if (!allFilled) return;
+    if (!hasAtLeastOne) return;
     onSave(goals.map(g => g.trim()));
   };
 
@@ -23,8 +24,8 @@ export const GoalPopup = ({ onSave }) => {
     <div className="popup-overlay">
       <div className="popup-modal">
         <div className="popup-icon"><Target size={28} /></div>
-        <h2 className="popup-title">Set Today's 3 Goals</h2>
-        <p className="popup-sub">What are the 3 most important things you'll accomplish today?</p>
+        <h2 className="popup-title">Set Today's Goals</h2>
+        <p className="popup-sub">What are the most important things you'll accomplish today? (at least 1 required)</p>
 
         <form onSubmit={submit} className="popup-form">
           {goals.map((g, i) => (
@@ -41,15 +42,15 @@ export const GoalPopup = ({ onSave }) => {
           ))}
 
           <button
-            className={`btn-primary popup-submit ${!allFilled ? 'disabled' : ''}`}
+            className={`btn-primary popup-submit ${!hasAtLeastOne ? 'disabled' : ''}`}
             type="submit"
-            disabled={!allFilled}
+            disabled={!hasAtLeastOne}
           >
             Start My Day →
           </button>
 
-          {!allFilled && (
-            <p className="popup-hint">All 3 goals are required to continue</p>
+          {!hasAtLeastOne && (
+            <p className="popup-hint">At least 1 goal is required to continue</p>
           )}
         </form>
       </div>

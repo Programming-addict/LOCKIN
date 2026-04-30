@@ -1,23 +1,23 @@
 .todo-page { max-width: 620px; margin: 0 auto; }
 
-/* Weekly reset notice */
+/* ── Reset notice ── */
 .todo-reset-notice {
   display: flex;
   align-items: center;
-  gap: 7px;
+  gap: 8px;
   font-family: var(--font-mono);
   font-size: 11px;
   color: var(--text-muted);
-  margin: 12px 0 0;
-  padding: 7px 12px;
+  margin: 10px 0 0;
+  padding: 8px 12px;
   background: var(--surface-1);
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
 }
 
-.todo-reset-notice svg { color: var(--cyan); opacity: 0.6; flex-shrink: 0; }
+.todo-reset-notice svg { color: var(--blue); opacity: 0.7; flex-shrink: 0; }
 
-/* Filter count badge */
+/* ── Filter count badge ── */
 .filter-count {
   display: inline-flex;
   align-items: center;
@@ -25,27 +25,24 @@
   min-width: 16px;
   height: 16px;
   padding: 0 4px;
-  border-radius: 8px;
-  background: var(--surface-2);
-  border: 1px solid var(--border-bright);
+  border-radius: 999px;
+  background: var(--surface-3);
   font-family: var(--font-mono);
-  font-size: 9px;
+  font-size: 10px;
   color: var(--text-muted);
   margin-left: 5px;
 }
 
-/* Add form */
+/* ── Add form ── */
 .todo-form {
   background: var(--surface-1);
-  background-image: linear-gradient(180deg, rgba(255,255,255,0.02) 0%, transparent 60px);
   border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
-  padding: 18px;
+  border-radius: var(--radius-xl);
+  padding: 16px;
   margin-top: 24px;
   display: flex;
   flex-direction: column;
   gap: 10px;
-  box-shadow: var(--card-shadow);
 }
 
 .todo-form-row {
@@ -64,28 +61,25 @@
   border-radius: var(--radius-sm);
 }
 
-/* Filter tabs */
+/* ── Filter tabs ── */
 .filter-tabs {
   display: flex;
-  gap: 0;
-  margin: 20px 0 14px;
+  margin: 20px 0 12px;
   background: var(--surface-1);
   border: 1px solid var(--border);
   border-radius: var(--radius);
-  padding: 4px;
+  padding: 3px;
 }
 
 .filter-tab {
   flex: 1;
   padding: 7px 0;
-  border-radius: var(--radius-sm);
-  font-size: 12.5px;
-  font-weight: 600;
-  font-family: var(--font-display);
-  letter-spacing: 0.3px;
+  border-radius: 9px;
+  font-size: 13px;
+  font-weight: 500;
   color: var(--text-muted);
   background: transparent;
-  transition: background 0.12s, color 0.12s;
+  transition: background var(--duration), color var(--duration);
 }
 
 .filter-tab:hover { color: var(--text-soft); }
@@ -93,43 +87,68 @@
 .filter-tab.active {
   background: var(--surface-3);
   color: var(--text);
+  font-weight: 600;
 }
 
-/* Todo items */
-.todo-list { display: flex; flex-direction: column; gap: 5px; }
+/* ── Todo list ── */
+.todo-list { display: flex; flex-direction: column; gap: 1px; }
 
+/* ── Todo item ── */
 .todo-item {
   display: flex;
   align-items: center;
   gap: 12px;
   background: var(--surface-1);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  padding: 12px 14px;
-  transition: opacity 0.2s, border-color 0.15s, background 0.12s;
+  border-bottom: 1px solid var(--border);
+  padding: 13px 16px;
+  transition: background 0.15s, transform 0.2s var(--spring);
+  border-left: none;
+  border-radius: 0;
+  animation: slide-up 0.28s var(--spring) both;
+  will-change: transform;
 }
 
-.todo-item:hover {
-  border-color: var(--border-bright);
-  background: var(--surface-2);
-}
+/* Round first and last */
+.todo-list .todo-item:first-child  { border-radius: var(--radius-lg) var(--radius-lg) 0 0; }
+.todo-list .todo-item:last-child   { border-radius: 0 0 var(--radius-lg) var(--radius-lg); border-bottom: none; }
+.todo-list .todo-item:only-child   { border-radius: var(--radius-lg); border-bottom: none; }
 
+.todo-item:hover { background: var(--surface-2); }
+
+/* Stagger list items */
+.todo-list .todo-item:nth-child(1) { animation-delay: 0.04s; }
+.todo-list .todo-item:nth-child(2) { animation-delay: 0.08s; }
+.todo-list .todo-item:nth-child(3) { animation-delay: 0.12s; }
+.todo-list .todo-item:nth-child(4) { animation-delay: 0.16s; }
+.todo-list .todo-item:nth-child(5) { animation-delay: 0.20s; }
+.todo-list .todo-item:nth-child(n+6) { animation-delay: 0.22s; }
+
+/* When there's only 1, fix border */
 .todo-item.done { opacity: 0.4; }
 
+/* Priority border: left-only, always visible (not just on hover) */
+.todo-item[data-priority="high"]   { border-left: 3px solid var(--rose); }
+.todo-item[data-priority="medium"] { border-left: 3px solid var(--amber); }
+.todo-item[data-priority="low"]    { border-left: 3px solid var(--green); }
+
+/* ── Check ── */
 .todo-check {
-  width: 21px; height: 21px;
-  border-radius: 6px;
+  width: 22px; height: 22px;
+  border-radius: 50%;
   border: 2px solid;
   background: transparent;
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  transition: transform 0.15s, background 0.15s;
+  transition: transform 0.22s var(--spring-press), background 0.18s, box-shadow 0.18s;
+  will-change: transform;
 }
 
-.todo-check:hover { transform: scale(1.12); }
+.todo-check:hover  { transform: scale(1.15); }
+.todo-check:active { transform: scale(0.88); transition-duration: 0.08s; }
 
+/* ── Body ── */
 .todo-body {
   flex: 1;
   min-width: 0;
@@ -139,7 +158,8 @@
 }
 
 .todo-text {
-  font-size: 13.5px;
+  font-size: 15px;
+  font-weight: 400;
   color: var(--text);
   word-break: break-word;
   line-height: 1.4;
@@ -151,14 +171,42 @@
 }
 
 .todo-date {
-  font-size: 10.5px;
+  font-size: 11px;
   font-family: var(--font-mono);
   color: var(--text-muted);
 }
 
+/* ── Priority dot ── */
 .priority-dot {
   width: 6px; height: 6px;
   border-radius: 50%;
   flex-shrink: 0;
-  opacity: 0.8;
+}
+
+/* ── Animated SVG checkmark ── */
+.check-draw {
+  display: block;
+  overflow: visible;
+}
+
+.check-draw polyline {
+  stroke-dasharray: 22;
+  stroke-dashoffset: 22;
+  animation: check-draw-in 0.3s cubic-bezier(0.22, 1, 0.36, 1) 0.04s forwards;
+}
+
+@keyframes check-draw-in {
+  from { stroke-dashoffset: 22; }
+  to   { stroke-dashoffset: 0; }
+}
+
+/* Completion flash on the item */
+.todo-item:has(.check-draw) {
+  animation: done-flash 0.35s var(--spring) both;
+}
+
+@keyframes done-flash {
+  0%   { background: var(--surface-1); }
+  30%  { background: rgba(48,209,88,0.06); }
+  100% { background: var(--surface-1); }
 }
