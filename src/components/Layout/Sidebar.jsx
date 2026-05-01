@@ -1,5 +1,5 @@
 import { NavLink } from 'react-router-dom';
-import { Timer, CheckSquare, Calendar, Target, Flame, BarChart2, Newspaper, Sparkles, Menu, X } from 'lucide-react';
+import { Timer, CheckSquare, Calendar, Target, Flame, BarChart2, Newspaper, Menu, X } from 'lucide-react';
 import { useState } from 'react';
 import { usePomodoroContext } from '../../context/PomodoroContext';
 import { AuthButton } from '../Auth/AuthButton';
@@ -12,7 +12,6 @@ const NAV = [
   { to: '/goals',   icon: Target,      label: 'Daily Goals'   },
   { to: '/review',  icon: BarChart2,   label: 'Weekly Review' },
   { to: '/news',    icon: Newspaper,   label: 'News'          },
-  { to: '/coach',   icon: Sparkles,    label: 'Focus Coach'   },
 ];
 
 export const Sidebar = ({ streak }) => {
