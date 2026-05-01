@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { Play, Pause, RotateCcw, Settings, SkipForward } from 'lucide-react';
 import { usePomodoroContext } from '../../context/PomodoroContext';
-import { SphereFace } from './SphereFace';
+import { CircularRing } from './CircularRing';
 import { LofiPlayer } from './LofiPlayer';
 import { Confetti } from '../Confetti';
 import './Pomodoro.css';
@@ -61,7 +61,7 @@ export const PomodoroTimer = () => {
       </div>
 
       <div className={`pomodoro-card mode-${mode} ${running ? 'running' : ''}`}>
-        <SphereFace progress={progress} mode={mode} seconds={seconds} running={running} />
+        <CircularRing progress={progress} mode={mode} seconds={seconds} running={running} />
 
         <div className="pomo-controls">
           <button className="icon-btn-lg" onClick={reset} title="Reset">

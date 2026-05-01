@@ -1,16 +1,24 @@
 import Anthropic from '@anthropic-ai/sdk';
 
-const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+export const config = { runtime: 'nodejs' };
 
 export default async function handler(req, res) {
+  // Handle CORS preflight
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  if (req.method === 'OPTIONS') return res.status(200).end();
+
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  const { messages, systemContext } = req.body;
+  const { messages, systemContext } = req.body ?? {};
   if (!messages || !Array.isArray(messages)) {
     return res.status(400).json({ error: 'Invalid messages' });
   }
+
+  const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
   const systemPrompt = `You are an elite focus and productivity coach embedded inside FocusFlow — a Pomodoro-based productivity app. You are sharp, direct, and motivating. Think of yourself as a blend of a world-class sports coach and a Silicon Valley productivity guru.
 
@@ -28,32 +36,33 @@ When the user asks for general help (not productivity-related), answer helpfully
 
 Keep responses concise and punchy unless asked to elaborate. Use line breaks for readability. Never use excessive bullet lists — prose feels more human.`;
 
-  // Set SSE headers
+  // SSE headers
   res.setHeader('Content-Type', 'text/event-stream');
-  res.setHeader('Cache-Control', 'no-cache');
+  res.setHeader('Cache-Control', 'no-cache, no-transform');
   res.setHeader('Connection', 'keep-alive');
-  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('X-Accel-Buffering', 'no');
+  res.flushHeaders();
 
   try {
-    const stream = await client.messages.stream({
-      model: 'claude-opus-4-5',
+    const stream = client.messages.stream({
+      model: 'claude-3-5-haiku-20241022',
       max_tokens: 1024,
       system: systemPrompt,
       messages,
     });
 
-    for await (const chunk of stream) {
-      if (chunk.type === 'content_block_delta' && chunk.delta?.type === 'text_delta') {
-        const text = chunk.delta.text;
-        res.write(`data: ${JSON.stringify({ text })}\n\n`);
-      }
-    }
+    stream.on('text', (text) => {
+      res.write(`data: ${JSON.stringify({ text })}\n\n`);
+    });
 
+    await stream.finalMessage();
     res.write('data: [DONE]\n\n');
     res.end();
   } catch (err) {
     console.error('Claude API error:', err);
-    res.write(`data: ${JSON.stringify({ error: err.message })}\n\n`);
-    res.end();
+    try {
+      res.write(`data: ${JSON.stringify({ error: err.message })}\n\n`);
+      res.end();
+    } catch (_) { res.end(); }
   }
 }
