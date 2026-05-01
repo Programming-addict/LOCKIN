@@ -1,175 +1,336 @@
-/* ── Cinematic Background — Night Drive ── */
+/* ══════════════════════════════════════════════════
+   CINEMATIC BACKGROUND — Las Vegas Sphere Night
+   ══════════════════════════════════════════════════ */
 
-.cinematic-bg {
+/* ── Root container — fixed, full-screen, behind UI ── */
+.cin-bg {
   position: fixed;
   inset: 0;
-  z-index: 1;
+  z-index: 2;           /* above body, below sidebar(100) & topbar(50) */
   overflow: hidden;
   pointer-events: none;
-  background: #020510;
+  user-select: none;
 }
 
-/* ── Night sky ── */
+/* ────────────────────────────────────────────────
+   1. NIGHT SKY
+   ──────────────────────────────────────────────── */
 .cin-sky {
   position: absolute;
-  top: 0; left: 0; right: 0;
-  height: 56%;
+  inset: 0;
   background:
-    radial-gradient(ellipse 100% 65% at 50% 0%,   #0f1e3a 0%, transparent 70%),
-    radial-gradient(ellipse 60% 50% at 18% 42%,   #0b1828 0%, transparent 60%),
-    radial-gradient(ellipse 60% 50% at 82% 42%,   #0b1828 0%, transparent 60%),
-    linear-gradient(180deg, #08101e 0%, #030610 65%, transparent 100%);
+    /* Far-top star field suggestion */
+    radial-gradient(ellipse 120% 40% at 50% -5%,
+      rgba(30, 20, 60, 0.6) 0%, transparent 70%),
+    /* Deep navy core */
+    linear-gradient(
+      180deg,
+      #010108  0%,
+      #02020e  8%,
+      #040412  18%,
+      #060720  30%,
+      #090b2a  45%,
+      #0d0d2e  58%,
+      #110928  72%,
+      #150820  85%,
+      #1a0a22  100%
+    );
 }
 
-/* ── Stars ── */
+/* ────────────────────────────────────────────────
+   2. STARS
+   ──────────────────────────────────────────────── */
 .cin-stars-layer {
   position: absolute;
-  top: 0; left: 0; right: 0;
-  height: 48%;
+  inset: 0 0 48% 0;
+  pointer-events: none;
 }
 
 .cin-star {
   position: absolute;
   border-radius: 50%;
-  background: #fff;
-  box-shadow: 0 0 3px rgba(255,255,255,0.8), 0 0 8px rgba(255,255,255,0.3);
-  animation: star-twinkle ease-in-out infinite alternate;
+  background: #ffffff;
+  box-shadow:
+    0 0 2px rgba(255, 255, 255, 0.9),
+    0 0 6px rgba(220, 220, 255, 0.4);
+  animation: cin-twinkle var(--dur-s, 3s) ease-in-out
+    infinite alternate var(--del-s, 0s);
 }
 
-@keyframes star-twinkle {
-  0%   { opacity: 0.1;  transform: scale(0.6); }
-  100% { opacity: 0.95; transform: scale(1.4); }
+@keyframes cin-twinkle {
+  from {
+    opacity: var(--op-hi, 0.8);
+    transform: scale(1.1);
+  }
+  to {
+    opacity: var(--op-lo, 0.08);
+    transform: scale(0.55);
+  }
 }
 
-/* ── Horizon city glow ── */
-.cin-horizon-glow {
+/* ────────────────────────────────────────────────
+   3. LAS VEGAS SKYLINE
+   ──────────────────────────────────────────────── */
+.cin-skyline-wrap {
   position: absolute;
-  top: 40%;
-  left: 0; right: 0;
-  height: 200px;
-  background: radial-gradient(
-    ellipse 65% 100% at 50% 100%,
-    rgba(255, 155, 40, 0.5)  0%,
-    rgba(251, 110, 20, 0.18) 45%,
-    transparent 72%
-  );
-  filter: blur(14px);
-}
-
-/* Thin bright horizon line */
-.cin-horizon-line {
-  position: absolute;
-  top: 49.3%;
-  left: 0; right: 0;
-  height: 2px;
-  background: linear-gradient(
-    90deg,
-    transparent               0%,
-    rgba(255, 185, 65, 0.45) 15%,
-    rgba(255, 230, 140, 1.0) 50%,
-    rgba(255, 185, 65, 0.45) 85%,
-    transparent              100%
-  );
-  box-shadow: 0 0 12px rgba(255, 200, 80, 0.6), 0 0 40px rgba(255, 140, 20, 0.25);
-}
-
-/* ── Road ── */
-.cin-road {
-  position: absolute;
-  top: 49%;
   bottom: 0;
-  left: 0; right: 0;
-  overflow: hidden;
+  left: 0;
+  right: 0;
+  height: 58%;
+  pointer-events: none;
 }
 
-/* Asphalt surface — trapezoid (perspective) */
-.cin-asphalt {
+.cin-skyline-wrap svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+/* ────────────────────────────────────────────────
+   4. CITY HORIZON GLOW
+   ──────────────────────────────────────────────── */
+.cin-city-glow {
+  position: absolute;
+  bottom: 22%;
+  left: 0;
+  right: 0;
+  height: 220px;
+  pointer-events: none;
+}
+
+/* Warm casino strip haze */
+.cin-city-glow::before {
+  content: '';
   position: absolute;
   inset: 0;
-  background: linear-gradient(180deg, #060610 0%, #0a0a16 55%, #0e0e1e 100%);
-  clip-path: polygon(33% 0%, 67% 0%, 100% 100%, 0% 100%);
+  background: radial-gradient(
+    ellipse 70% 100% at 50% 100%,
+    rgba(255, 130, 45, 0.10)  0%,
+    rgba(255,  80, 25, 0.05)  45%,
+    transparent               72%
+  );
+  filter: blur(18px);
 }
 
-/* Vanishing-point glow on road */
-.cin-asphalt::after {
+/* Sphere purple haze on horizon */
+.cin-city-glow::after {
   content: '';
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 55%;
+  height: 130px;
+  background: radial-gradient(
+    ellipse,
+    rgba(147, 51, 234, 0.18) 0%,
+    rgba(109, 40, 217, 0.07) 55%,
+    transparent               80%
+  );
+  filter: blur(22px);
+}
+
+/* ────────────────────────────────────────────────
+   5. FOG LAYERS
+   ──────────────────────────────────────────────── */
+.cin-fog {
+  position: absolute;
+  left: -20%;
+  right: -20%;
+  border-radius: 50%;
+  pointer-events: none;
+}
+
+.cin-fog-1 {
+  bottom: 34%;
+  height: 100px;
+  background: radial-gradient(
+    ellipse, rgba(210, 200, 240, 0.048) 0%, transparent 70%
+  );
+  filter: blur(32px);
+  animation: cin-fog-drift 24s ease-in-out infinite;
+}
+
+.cin-fog-2 {
+  bottom: 26%;
+  height: 76px;
+  background: radial-gradient(
+    ellipse, rgba(190, 180, 230, 0.032) 0%, transparent 70%
+  );
+  filter: blur(26px);
+  animation: cin-fog-drift 32s ease-in-out infinite reverse;
+  animation-delay: -11s;
+}
+
+.cin-fog-3 {
+  bottom: 19%;
+  height: 58px;
+  background: radial-gradient(
+    ellipse, rgba(170, 155, 220, 0.024) 0%, transparent 70%
+  );
+  filter: blur(20px);
+  animation: cin-fog-drift 20s ease-in-out infinite;
+  animation-delay: -7s;
+}
+
+@keyframes cin-fog-drift {
+  0%   { transform: translateX(0%)   scaleX(1.00); }
+  25%  { transform: translateX(2.5%) scaleX(1.04); }
+  50%  { transform: translateX(0.5%) scaleX(0.98); }
+  75%  { transform: translateX(-2%)  scaleX(1.03); }
+  100% { transform: translateX(0%)   scaleX(1.00); }
+}
+
+/* ────────────────────────────────────────────────
+   6. FLOATING SPHERE
+   ──────────────────────────────────────────────── */
+.cin-sphere-orbit {
+  position: absolute;
+  top:  36%;
+  left: 50%;
+  /* transform set by requestAnimationFrame in JS */
+  width:  min(520px, 38vw);
+  height: min(520px, 38vw);
+  pointer-events: none;
+}
+
+/* Outer slow-pulse glow */
+.cin-sphere-aura-outer {
+  position: absolute;
+  inset: -28%;
+  border-radius: 50%;
+  background: radial-gradient(
+    circle,
+    rgba(168,  85, 247, 0.32) 0%,
+    rgba(124,  58, 237, 0.12) 40%,
+    transparent                72%
+  );
+  filter: blur(48px);
+  animation: cin-aura-pulse 5.5s ease-in-out infinite;
+}
+
+/* Inner tighter glow */
+.cin-sphere-aura-inner {
+  position: absolute;
+  inset: -12%;
+  border-radius: 50%;
+  background: radial-gradient(
+    circle,
+    rgba(192, 132, 252, 0.28) 0%,
+    rgba(139,  92, 246, 0.08) 55%,
+    transparent                75%
+  );
+  filter: blur(24px);
+  animation: cin-aura-pulse 5.5s ease-in-out infinite reverse;
+  animation-delay: -2.75s;
+}
+
+@keyframes cin-aura-pulse {
+  0%, 100% { opacity: 0.72; transform: scale(1.00); }
+  50%       { opacity: 1.00; transform: scale(1.10); }
+}
+
+/* SVG sphere fills the orbit div */
+.cin-sphere-svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+/* Ground cast shadow / light spill below sphere */
+.cin-sphere-cast {
+  position: absolute;
+  bottom: -8%;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 72%;
+  height: 40px;
+  background: radial-gradient(
+    ellipse,
+    rgba(147, 51, 234, 0.30) 0%,
+    rgba(109, 40, 217, 0.10) 50%,
+    transparent               78%
+  );
+  filter: blur(16px);
+  border-radius: 50%;
+}
+
+/* ────────────────────────────────────────────────
+   7. GROUND / ROAD
+   ──────────────────────────────────────────────── */
+.cin-ground {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 24%;
+  background: linear-gradient(
+    to bottom,
+    #07050f 0%,
+    #050309 55%,
+    #030208 100%
+  );
+  pointer-events: none;
+}
+
+/* Horizon separator line */
+.cin-horizon-line {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent                  0%,
+    rgba(147, 51, 234, 0.30)    20%,
+    rgba(200, 150, 255, 0.60)   50%,
+    rgba(147, 51, 234, 0.30)    80%,
+    transparent                 100%
+  );
+  box-shadow: 0 0 10px rgba(147, 51, 234, 0.35);
+}
+
+/* Sphere reflection on wet road */
+.cin-road-reflect {
   position: absolute;
   top: 0;
   left: 50%;
   transform: translateX(-50%);
-  width: 160px;
-  height: 60px;
-  background: radial-gradient(ellipse at center, rgba(255, 190, 80, 0.18) 0%, transparent 70%);
-  filter: blur(12px);
-}
-
-/* ── Lane dashes — rush toward viewer ── */
-.cin-lane-dashes {
-  position: absolute;
-  inset: 0;
-  clip-path: polygon(33% 0%, 67% 0%, 100% 100%, 0% 100%);
-}
-
-.cin-dash {
-  position: absolute;
-  left: 50%;
-  top: 0;
-  width: 4px;
-  height: 26px;
-  background: linear-gradient(180deg, rgba(255,255,220,0.95) 0%, rgba(255,255,200,0.4) 100%);
-  border-radius: 2px;
-  animation: dash-approach 2.72s linear infinite;
-  transform-origin: center top;
-}
-
-@keyframes dash-approach {
-  0% {
-    transform: translate(-50%, 0) scale(0.06);
-    opacity: 0;
-  }
-  6%  { opacity: 0.9; }
-  85% { opacity: 0.8; }
-  100% {
-    transform: translate(-50%, 52vh) scale(1.6);
-    opacity: 0;
-  }
-}
-
-/* ── Road edge lines — polygons that exactly follow the trapezoid edges ── */
-.cin-edge {
-  position: absolute;
-  inset: 0;
+  width: 320px;
+  height: 100%;
   background: linear-gradient(
-    180deg,
-    rgba(255, 255, 255, 0.0)  0%,
-    rgba(255, 255, 255, 0.45) 35%,
-    rgba(255, 240, 180, 0.75) 70%,
-    rgba(255, 240, 180, 0.95) 100%
+    to bottom,
+    rgba(147, 51, 234, 0.18) 0%,
+    rgba(109, 40, 217, 0.07) 40%,
+    transparent               80%
   );
+  filter: blur(14px);
 }
 
-.cin-edge-left {
-  clip-path: polygon(33% 0%, calc(33% + 3px) 0%, 3px 100%, 0% 100%);
-}
-
-.cin-edge-right {
-  clip-path: polygon(calc(67% - 3px) 0%, 67% 0%, 100% 100%, calc(100% - 3px) 100%);
-}
-
-/* ── Vignette ── */
+/* ────────────────────────────────────────────────
+   8. VIGNETTE
+   ──────────────────────────────────────────────── */
 .cin-vignette {
   position: absolute;
   inset: 0;
   background: radial-gradient(
-    ellipse 90% 80% at 50% 50%,
-    transparent 25%,
-    rgba(0, 0, 0, 0.55) 100%
+    ellipse 85% 75% at 50% 42%,
+    transparent              22%,
+    rgba(0, 0,  4, 0.38)    62%,
+    rgba(0, 0, 10, 0.72)   100%
   );
+  pointer-events: none;
 }
 
-/* ── Readability overlay ── */
+/* ────────────────────────────────────────────────
+   9. FINAL READABILITY OVERLAY
+   ──────────────────────────────────────────────── */
 .cin-overlay {
   position: absolute;
   inset: 0;
-  background: rgba(0, 0, 8, 0.22);
+  background: rgba(0, 0, 6, 0.20);
+  pointer-events: none;
 }

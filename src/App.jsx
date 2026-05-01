@@ -10,6 +10,7 @@ import { CalendarView } from './components/Calendar/CalendarView';
 import { DailyGoalsView } from './components/DailyGoals/DailyGoalsView';
 import { WeeklyReview } from './components/WeeklyReview/WeeklyReview';
 import { NewsView } from './components/News/NewsView';
+import { FocusCoach } from './components/AI/FocusCoach';
 import { LoginPage } from './components/Auth/LoginPage';
 import { useStreak } from './hooks/useStreak';
 import { useDailyGoals } from './hooks/useDailyGoals';
@@ -51,6 +52,7 @@ const AppRoutes = () => {
               <Route path="goals"    element={<DailyGoalsView />} />
               <Route path="review"   element={<WeeklyReview />} />
               <Route path="news"     element={<NewsView />} />
+              <Route path="coach"   element={<FocusCoach />} />
             </Route>
           </Routes>
         </RemindersProvider>
