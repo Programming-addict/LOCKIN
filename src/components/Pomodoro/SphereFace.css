@@ -1,71 +1,83 @@
-/* ── Sphere wrapper ── */
+/* ══════════════════════════════════════════
+   SPHERE FACE
+   ══════════════════════════════════════════ */
+
+/* ── Outer wrapper — perspective container ── */
 .sf-wrap {
   position: relative;
   display: flex;
   align-items: center;
   justify-content: center;
   overflow: visible;
-  animation: sf-float 5s ease-in-out infinite;
+  /* Float bob */
+  animation: sf-float 5.5s ease-in-out infinite;
 }
 
 @keyframes sf-float {
-  0%, 100% { transform: translateY(0px);  }
-  50%       { transform: translateY(-9px); }
+  0%, 100% { transform: translateY(0px);   }
+  50%       { transform: translateY(-10px); }
 }
 
-/* ── Emanating pulse rings when running ── */
+/* ── 3-D tilt child — receives rotateX/rotateY from JS ── */
+.sf-tilt {
+  transform-style: flat;
+  will-change: transform;
+  transition: transform 0.05s linear;
+}
+
+/* ── Emanating pulse rings when timer is running ── */
 .sf-wrap.sf-running::before,
 .sf-wrap.sf-running::after {
   content: '';
   position: absolute;
-  width:  188px;   /* sphere diameter (SR × 2) */
-  height: 188px;
+  /* diameter = SR × 2 = 196px */
+  width:  196px;
+  height: 196px;
   top:  50%;
   left: 50%;
   transform: translate(-50%, -50%);
   border-radius: 50%;
   pointer-events: none;
-  animation: sf-emanate 2.8s ease-out infinite;
+  animation: sf-pulse 2.8s ease-out infinite;
 }
 
 .sf-wrap.sf-running::before {
-  border: 1.5px solid var(--sf-pulse, rgba(10,132,255,0.38));
+  border: 2px solid var(--sf-pulse, rgba(10,132,255,0.44));
 }
-
 .sf-wrap.sf-running::after {
   border: 1px solid var(--sf-pulse-soft, rgba(10,132,255,0.18));
   animation-delay: 1.4s;
 }
 
-@keyframes sf-emanate {
+@keyframes sf-pulse {
   0%   { transform: translate(-50%,-50%) scale(1);    opacity: 1; }
-  100% { transform: translate(-50%,-50%) scale(1.24); opacity: 0; }
+  100% { transform: translate(-50%,-50%) scale(1.28); opacity: 0; }
 }
 
-/* ── Tick pop on each second ── */
+/* ── Second tick — pop animation ── */
 .sf-tick {
-  animation: sf-tick-pop 0.14s cubic-bezier(0.34,1.56,0.64,1) both;
+  animation: sf-tick-pop 0.16s cubic-bezier(0.34, 1.56, 0.64, 1) both;
 }
 
 @keyframes sf-tick-pop {
-  0%   { opacity: 0.55; transform: scale(0.94); }
-  100% { opacity: 1;    transform: scale(1);    }
+  0%   { opacity: 0.4; transform: scale(0.92); }
+  100% { opacity: 1;   transform: scale(1);    }
 }
 
-/* ── SVG text styles ── */
+/* ── SVG text — timer digits ── */
 .sf-time {
   font-family: var(--font-mono);
-  font-size: 24px;
+  font-size: 23px;
   font-weight: 300;
   letter-spacing: -0.5px;
-  fill: rgba(255, 255, 255, 0.92);
+  fill: rgba(255, 255, 255, 0.90);
 }
 
+/* ── SVG text — mode label ── */
 .sf-label {
   font-family: var(--font-body);
-  font-size: 9px;
+  font-size: 8.5px;
   font-weight: 600;
-  letter-spacing: 2.5px;
-  fill: rgba(255, 255, 255, 0.42);
-  text-transform: uppercase;
+  letter-spacing: 2.8px;
+  fill: rgba(255, 255, 255, 0.40);
 }
