@@ -10,6 +10,8 @@ import { CalendarView } from './components/Calendar/CalendarView';
 import { DailyGoalsView } from './components/DailyGoals/DailyGoalsView';
 import { WeeklyReview } from './components/WeeklyReview/WeeklyReview';
 import { NewsView } from './components/News/NewsView';
+import { StudyView } from './components/Study/StudyView';
+import { StudyProvider } from './context/StudyContext';
 import { LoginPage } from './components/Auth/LoginPage';
 import { useStreak } from './hooks/useStreak';
 import { useDailyGoals } from './hooks/useDailyGoals';
@@ -43,16 +45,19 @@ const AppRoutes = () => {
     <BrowserRouter>
       <PomodoroProvider>
         <RemindersProvider>
-          <Routes>
-            <Route element={<Layout streak={streak} />}>
-              <Route index           element={<PomodoroTimer />} />
-              <Route path="todos"    element={<TodoList />} />
-              <Route path="calendar" element={<CalendarView />} />
-              <Route path="goals"    element={<DailyGoalsView />} />
-              <Route path="review"   element={<WeeklyReview />} />
-              <Route path="news"     element={<NewsView />} />
-            </Route>
-          </Routes>
+          <StudyProvider>
+            <Routes>
+              <Route element={<Layout streak={streak} />}>
+                <Route index           element={<PomodoroTimer />} />
+                <Route path="todos"    element={<TodoList />} />
+                <Route path="calendar" element={<CalendarView />} />
+                <Route path="goals"    element={<DailyGoalsView />} />
+                <Route path="review"   element={<WeeklyReview />} />
+                <Route path="news"     element={<NewsView />} />
+                <Route path="study"    element={<StudyView />} />
+              </Route>
+            </Routes>
+          </StudyProvider>
         </RemindersProvider>
       </PomodoroProvider>
     </BrowserRouter>
