@@ -4,7 +4,8 @@ import { Users, Copy, Check, LogOut, Play, Crown, Clock, Zap, Coffee, Globe, Tro
 import { useStudy }              from '../../context/StudyContext';
 import { useAuth  }              from '../../context/AuthContext';
 import { useGlobalLeaderboard }  from '../../hooks/useGlobalLeaderboard';
-import { recordFocusSession }    from '../../utils/leaderboard';
+import { LofiPlayer }            from '../Pomodoro/LofiPlayer';
+import { recordStudySession } from '../../utils/leaderboard';
 import { db } from '../../firebase';
 import './Study.css';
 
@@ -41,16 +42,14 @@ const useRoomTimer = (room) => {
     ?? (typeof room?.sessionEndTime === 'number' ? room.sessionEndTime : null);
 
   useEffect(() => {
-    if (!endMs || room?.status === 'idle') {
-      setRemaining(0); return;
-    }
+    if (!endMs || room?.status === 'idle') return;
     const update = () => setRemaining(Math.max(0, Math.floor((endMs - Date.now()) / 1000)));
     update();
     const id = setInterval(update, 500);
     return () => clearInterval(id);
   }, [endMs, room?.status]); // endMs is a number — safe reference comparison
 
-  return remaining;
+  return !endMs || room?.status === 'idle' ? 0 : remaining;
 };
 
 /* ══════════════════════════════════════════
@@ -208,6 +207,12 @@ const Room = () => {
   const breakEndRef  = useRef(false);   // dedup: break → idle
   const prevStatus   = useRef(room?.status);
   const [lbTab, setLbTab] = useState('room'); // 'room' | 'global'
+  const [nowMs, setNowMs] = useState(() => Date.now());
+
+  useEffect(() => {
+    const id = setInterval(() => setNowMs(Date.now()), 15_000);
+    return () => clearInterval(id);
+  }, []);
 
   /* ── Host: detect phase end and advance ── */
   useEffect(() => {
@@ -233,12 +238,25 @@ const Room = () => {
     if (prevStatus.current === 'focus' && room?.status === 'break') {
       const now      = Date.now();
       const isActive = me?.status === 'active' && (now - (me?.lastActive || 0)) < 60_000;
-      if (isActive && user) {
-        recordFocusSession(user, room?.sessionDuration || 25);
+      if (isActive && user && room) {
+        // Calculate actual focus time (in case session was paused early)
+        const startMs = room.sessionStartTime?.toMillis?.()
+                     ?? (typeof room.sessionStartTime === 'number' ? room.sessionStartTime : null);
+        const endMs   = room.sessionEndTime?.toMillis?.()
+                     ?? (typeof room.sessionEndTime === 'number' ? room.sessionEndTime : null);
+
+        let actualMins = room.sessionDuration || 25;
+        if (startMs && endMs && endMs > startMs) {
+          actualMins = Math.floor((endMs - startMs) / 60_000);
+          actualMins = Math.max(1, Math.min(actualMins, room.sessionDuration || 25)); // clamp: 1 min → full duration
+        }
+
+        // Record to both global leaderboard + weekly review
+        recordStudySession(user, actualMins);
       }
     }
     prevStatus.current = room?.status;
-  }, [room?.status]); // eslint-disable-line
+  }, [room?.status, room?.sessionStartTime, room?.sessionEndTime]); // eslint-disable-line
 
   /* ── Copy code ── */
   const [copied, setCopied] = useState(false);
@@ -262,8 +280,7 @@ const Room = () => {
   const POFF = CIRC * (1 - Math.min(1, Math.max(0, progress)));
 
   /* ── Members ── */
-  const now        = Date.now();
-  const active     = members.filter(m => now - (m.lastActive || 0) < 60_000);
+  const active     = members.filter(m => nowMs - (m.lastActive || 0) < 60_000);
   const sorted     = [...members].sort((a, b) => (b.totalFocus || 0) - (a.totalFocus || 0));
 
   /* ── Phase label ── */
@@ -384,6 +401,14 @@ const Room = () => {
               <span>{room?.breakDuration || 5}m break</span>
             </div>
           </div>
+
+          <div className="study-music-wrap">
+            <LofiPlayer
+              syncWithTimer={false}
+              storageKey={`study_lofi_${roomCode}`}
+              title="Room Music"
+            />
+          </div>
         </div>
 
         {/* Right column */}
@@ -399,7 +424,7 @@ const Room = () => {
                 .map(m => {
                   const isMe      = m.uid === user?.uid;
                   const isRmHost  = m.uid === room?.hostId;
-                  const online    = now - (m.lastActive || 0) < 60_000;
+                  const online    = nowMs - (m.lastActive || 0) < 60_000;
                   const s         = STATUS_MAP[online ? (m.status || 'active') : 'idle'] ?? STATUS_MAP.idle;
                   return (
                     <div key={m.uid} className={`study-member ${isMe ? 'study-member--me' : ''}`}>

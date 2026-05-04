@@ -191,10 +191,12 @@ export const StudyProvider = ({ children }) => {
   const startSession = useCallback(async (durationMins = 25) => {
     if (!db || room?.hostId !== user?.uid || !roomCode) return;
     completedRef.current = false;
-    const endTime = Timestamp.fromMillis(Date.now() + durationMins * 60 * 1000);
+    const now     = Date.now();
+    const endTime = Timestamp.fromMillis(now + durationMins * 60 * 1000);
     await updateDoc(roomRef(roomCode), {
       status:          'focus',
-      sessionEndTime:  endTime,
+      sessionStartTime: Timestamp.fromMillis(now),  // Track start for actual elapsed time
+      sessionEndTime:   endTime,
       sessionDuration: durationMins,
     });
   }, [roomCode, room, user]);
