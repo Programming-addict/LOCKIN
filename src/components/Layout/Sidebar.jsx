@@ -19,7 +19,7 @@ const NAV = [
 export const Sidebar = ({ streak }) => {
   const [open, setOpen] = useState(false);
   const { running }  = usePomodoroContext();
-  const { inRoom }   = useStudy();
+  const { inRoom, room } = useStudy();
 
   return (
     <>
@@ -48,6 +48,23 @@ export const Sidebar = ({ streak }) => {
               {to === '/study' && inRoom  && <span className="nav-indicator" style={{ background: 'var(--green)' }} />}
             </NavLink>
           ))}
+
+          {/* Dynamic: Study room tab (appears when in a room) */}
+          {inRoom && (
+            <NavLink
+              to="/study"
+              className={({ isActive }) => `nav-item nav-item--room ${isActive ? 'active' : ''}`}
+              onClick={() => setOpen(false)}
+              title={`Study room: ${room?.name || 'Unnamed'}`}
+            >
+              <Users size={17} />
+              <span className="nav-room-label">
+                {room?.name || 'Study Room'}
+                <span className="nav-room-badge">live</span>
+              </span>
+              <span className="nav-indicator" style={{ background: 'var(--green)' }} />
+            </NavLink>
+          )}
         </nav>
 
         <div className="sidebar-streak">
