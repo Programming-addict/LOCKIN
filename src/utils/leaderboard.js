@@ -20,6 +20,23 @@ export const recordFocusSession = async (user, mins = 25) => {
       photoURL: user.photoURL || null,
       focusMins: increment(mins),
       sessions: increment(1),
+      status: 'idle',
+      updatedAt: serverTimestamp(),
+    }, { merge: true });
+  } catch {
+    // Best-effort only.
+  }
+};
+
+export const updateUserStatus = async (user, status = 'idle') => {
+  if (!firebaseEnabled || !db || !user) return;
+  try {
+    const ref = doc(db, 'globalLeaderboard', getWeekKey(), 'users', user.uid);
+    await setDoc(ref, {
+      uid: user.uid,
+      displayName: user.displayName || 'Anonymous',
+      photoURL: user.photoURL || null,
+      status,
       updatedAt: serverTimestamp(),
     }, { merge: true });
   } catch {

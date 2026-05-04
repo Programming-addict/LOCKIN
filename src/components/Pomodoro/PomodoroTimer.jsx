@@ -7,7 +7,7 @@ import { useAuth }             from '../../context/AuthContext';
 import { CircularRing }        from './CircularRing';
 import { LofiPlayer }          from './LofiPlayer';
 import { Confetti }            from '../Confetti';
-import { recordFocusSession }  from '../../utils/leaderboard';
+import { recordFocusSession, updateUserStatus }  from '../../utils/leaderboard';
 import { usePet }              from '../../hooks/usePet';
 import { PetWidget }           from '../Pet/PetWidget';
 import './Pomodoro.css';
@@ -19,7 +19,7 @@ export const PomodoroTimer = () => {
     progress, sessionCount, settings, updateSettings,
   } = usePomodoroContext();
 
-  const { inRoom, updatePresence } = useStudy();
+  const { inRoom, syncRoomPresence, awardRoomFocus } = useStudy();
   const { user } = useAuth();
   const { awardCredits } = usePet();
 
@@ -37,18 +37,29 @@ export const PomodoroTimer = () => {
       // Record to global leaderboard + award pet credits
       recordFocusSession(user, settings.work);
       awardCredits(settings.work);
+      // Award focus minutes in study room (individual, not host-controlled)
+      if (inRoom) awardRoomFocus(settings.work);
     }
     prevSession.current = sessionCount;
   }, [sessionCount]); // eslint-disable-line
 
-  /* ── Sync presence to study room when timer state changes ── */
+  /* ── Sync presence to study room + global leaderboard when timer state changes ── */
   useEffect(() => {
+    if (!user) return;
+    // Update global leaderboard status
+    const leaderboardStatus = running && mode === 'work' ? 'active' : 'idle';
+    updateUserStatus(user, leaderboardStatus).catch(() => {});
+
+    // Sync to study room if in one
     if (!inRoom) return;
-    const status = running
-      ? (mode === 'work' ? 'focusing' : 'break')
-      : 'idle';
-    updatePresence({ status }).catch(() => {});
-  }, [running, mode, inRoom, updatePresence]);
+    if (running && mode === 'work') {
+      syncRoomPresence({ status: 'focusing', currentSessionStart: Date.now() });
+    } else if (running && mode === 'break') {
+      syncRoomPresence({ status: 'break', currentSessionStart: null });
+    } else {
+      syncRoomPresence({ status: 'idle', currentSessionStart: null });
+    }
+  }, [running, mode, inRoom, user, syncRoomPresence]); // eslint-disable-line
 
   /* ── Magnetic play button ── */
   const playRef = useRef(null);

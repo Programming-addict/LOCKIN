@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { Play, Pause, SkipBack, SkipForward, Volume2, VolumeX, ChevronDown, ChevronUp, Music } from 'lucide-react';
 import { usePomodoroContext } from '../../context/PomodoroContext';
+import { get, set } from '../../utils/storage';
 import './LofiPlayer.css';
 
 const STATIONS = [
@@ -29,14 +30,19 @@ const loadYTApi = (cb) => {
   }
 };
 
-export const LofiPlayer = () => {
+export const LofiPlayer = ({
+  syncWithTimer = true,
+  storageKey = 'lofi_player_state',
+  title = 'Lofi Focus Music',
+}) => {
   const { running } = usePomodoroContext();
+  const saved = get(storageKey, null);
 
-  const [expanded, setExpanded]   = useState(false);
-  const [stationIdx, setStation]  = useState(0);
+  const [expanded, setExpanded]   = useState(saved?.expanded ?? false);
+  const [stationIdx, setStation]  = useState(saved?.stationIdx ?? 0);
   const [playing, setPlaying]     = useState(false);
-  const [volume, setVolume]       = useState(60);
-  const [muted, setMuted]         = useState(false);
+  const [volume, setVolume]       = useState(saved?.volume ?? 60);
+  const [muted, setMuted]         = useState(saved?.muted ?? false);
   const [ready, setReady]         = useState(false);
   const [loading, setLoading]     = useState(false);
 
@@ -44,11 +50,19 @@ export const LofiPlayer = () => {
   const containerRef    = useRef(null);
   const playingRef      = useRef(false);
   const timerStartedRef = useRef(false);
+  const volumeRef       = useRef(volume);
+  const mutedRef        = useRef(muted);
 
-  const station = STATIONS[stationIdx];
+  const station = STATIONS[stationIdx] ?? STATIONS[0];
+
+  useEffect(() => {
+    set(storageKey, { expanded, stationIdx, volume, muted });
+  }, [expanded, stationIdx, volume, muted, storageKey]);
 
   // Keep playingRef in sync for use inside effects without stale closures
   useEffect(() => { playingRef.current = playing; }, [playing]);
+  useEffect(() => { volumeRef.current = volume; }, [volume]);
+  useEffect(() => { mutedRef.current = muted; }, [muted]);
 
   // Boot YouTube IFrame API once — containerRef must be in DOM at this point
   useEffect(() => {
@@ -67,7 +81,8 @@ export const LofiPlayer = () => {
         },
         events: {
           onReady: (e) => {
-            e.target.setVolume(60);
+            const initialVolume = mutedRef.current ? 0 : volumeRef.current;
+            e.target.setVolume(initialVolume);
             setReady(true);
             setLoading(false);
           },
@@ -86,7 +101,7 @@ export const LofiPlayer = () => {
 
   // Sync music with timer: auto-play on start, auto-stop on end (only if timer started it)
   useEffect(() => {
-    if (!ready) return;
+    if (!syncWithTimer || !ready) return;
     if (running) {
       if (!playingRef.current) {
         playerRef.current?.playVideo();
@@ -98,7 +113,7 @@ export const LofiPlayer = () => {
         timerStartedRef.current = false;
       }
     }
-  }, [running, ready]);
+  }, [running, ready, syncWithTimer]);
 
   const togglePlay = useCallback(() => {
     if (!ready || !playerRef.current) return;
@@ -144,8 +159,8 @@ export const LofiPlayer = () => {
       <div className="lofi-header" onClick={() => setExpanded(e => !e)}>
         <div className="lofi-header-left">
           <Music size={14} className={`lofi-music-icon ${playing ? 'spinning' : ''}`} />
-          <span className="lofi-header-title">
-            {playing ? `${station.emoji} ${station.name}` : 'Lofi Focus Music'}
+            <span className="lofi-header-title">
+            {playing ? `${station.emoji} ${station.name}` : title}
           </span>
           {playing && (
             <span className="lofi-live-badge">
