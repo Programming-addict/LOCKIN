@@ -6,8 +6,6 @@ import { CircularRing }        from './CircularRing';
 import { LofiPlayer }          from './LofiPlayer';
 import { Confetti }            from '../Confetti';
 import { recordFocusSession, updateUserStatus }  from '../../utils/leaderboard';
-import { usePet }              from '../../hooks/usePet';
-import { PetWidget }           from '../Pet/PetWidget';
 import './Pomodoro.css';
 
 export const PomodoroTimer = () => {
@@ -17,7 +15,6 @@ export const PomodoroTimer = () => {
   } = usePomodoroContext();
 
   const { user } = useAuth();
-  const { awardCredits } = usePet();
 
   const [showSettings, setShowSettings] = useState(false);
   const [draft,        setDraft]        = useState(settings);
@@ -30,9 +27,7 @@ export const PomodoroTimer = () => {
     if (sessionCount > prevSession.current) {
       setBurst(false);
       setTimeout(() => setBurst(true), 30);
-      // Record to global leaderboard + award pet credits
       recordFocusSession(user, settings.work);
-      awardCredits(settings.work);
     }
     prevSession.current = sessionCount;
   }, [sessionCount]); // eslint-disable-line
@@ -127,8 +122,6 @@ export const PomodoroTimer = () => {
           ))}
         </div>
       </div>
-
-      <PetWidget />
 
       <LofiPlayer />
 
