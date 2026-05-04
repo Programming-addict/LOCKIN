@@ -236,9 +236,7 @@ const Room = () => {
   /* ── All members: record global session when focus → break ── */
   useEffect(() => {
     if (prevStatus.current === 'focus' && room?.status === 'break') {
-      const now      = Date.now();
-      const isActive = me?.status === 'active' && (now - (me?.lastActive || 0)) < 60_000;
-      if (isActive && user && room) {
+      if (user && room) {
         // Calculate actual focus time (in case session was paused early)
         const startMs = room.sessionStartTime?.toMillis?.()
                      ?? (typeof room.sessionStartTime === 'number' ? room.sessionStartTime : null);
@@ -251,7 +249,7 @@ const Room = () => {
           actualMins = Math.max(1, Math.min(actualMins, room.sessionDuration || 25)); // clamp: 1 min → full duration
         }
 
-        // Record to both global leaderboard + weekly review
+        // Record to both global leaderboard + weekly review (all room members get credited)
         recordStudySession(user, actualMins);
       }
     }

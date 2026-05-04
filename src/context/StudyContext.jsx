@@ -224,15 +224,12 @@ export const StudyProvider = ({ children }) => {
 
       const batch = writeBatch(db);
 
-      // Award credits to eligible active members
+      // Award session time to all members in the room
       for (const mSnap of membersSnap.docs) {
         const m = mSnap.data();
-        const active = m.status === 'active' && (now - (m.lastActive || 0)) < IDLE_THRESHOLD;
-        if (active) {
-          batch.update(mSnap.ref, {
-            totalFocus: (m.totalFocus || 0) + (roomData.sessionDuration || 25),
-          });
-        }
+        batch.update(mSnap.ref, {
+          totalFocus: (m.totalFocus || 0) + (roomData.sessionDuration || 25),
+        });
       }
 
       // Transition to break
