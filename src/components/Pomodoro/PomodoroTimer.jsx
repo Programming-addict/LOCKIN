@@ -1,11 +1,13 @@
 import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Play, Pause, RotateCcw, Settings, SkipForward, Users } from 'lucide-react';
-import { usePomodoroContext } from '../../context/PomodoroContext';
-import { useStudy }           from '../../context/StudyContext';
-import { CircularRing }       from './CircularRing';
-import { LofiPlayer }         from './LofiPlayer';
-import { Confetti }           from '../Confetti';
+import { usePomodoroContext }  from '../../context/PomodoroContext';
+import { useStudy }            from '../../context/StudyContext';
+import { useAuth }             from '../../context/AuthContext';
+import { CircularRing }        from './CircularRing';
+import { LofiPlayer }          from './LofiPlayer';
+import { Confetti }            from '../Confetti';
+import { recordFocusSession }  from '../../utils/leaderboard';
 import './Pomodoro.css';
 
 export const PomodoroTimer = () => {
@@ -16,6 +18,7 @@ export const PomodoroTimer = () => {
   } = usePomodoroContext();
 
   const { inRoom, updatePresence } = useStudy();
+  const { user } = useAuth();
 
   const [showSettings, setShowSettings] = useState(false);
   const [draft,        setDraft]        = useState(settings);
@@ -28,9 +31,11 @@ export const PomodoroTimer = () => {
     if (sessionCount > prevSession.current) {
       setBurst(false);
       setTimeout(() => setBurst(true), 30);
+      // Record to global leaderboard
+      recordFocusSession(user, settings.work);
     }
     prevSession.current = sessionCount;
-  }, [sessionCount]);
+  }, [sessionCount]); // eslint-disable-line
 
   /* ── Sync presence to study room when timer state changes ── */
   useEffect(() => {

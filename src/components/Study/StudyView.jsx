@@ -1,8 +1,10 @@
 import { useState, useEffect, useRef } from 'react';
 import { doc, updateDoc } from 'firebase/firestore';
-import { Users, Copy, Check, LogOut, Play, Crown, Clock, Zap, Coffee } from 'lucide-react';
-import { useStudy } from '../../context/StudyContext';
-import { useAuth  } from '../../context/AuthContext';
+import { Users, Copy, Check, LogOut, Play, Crown, Clock, Zap, Coffee, Globe, Trophy } from 'lucide-react';
+import { useStudy }              from '../../context/StudyContext';
+import { useAuth  }              from '../../context/AuthContext';
+import { useGlobalLeaderboard }  from '../../hooks/useGlobalLeaderboard';
+import { recordFocusSession }    from '../../utils/leaderboard';
 import { db } from '../../firebase';
 import './Study.css';
 
@@ -62,9 +64,59 @@ const STATUS_MAP = {
 const MEDALS = ['🥇', '🥈', '🥉'];
 
 /* ══════════════════════════════════════════
+   GLOBAL LEADERBOARD COMPONENT
+══════════════════════════════════════════ */
+const GlobalLeaderboard = ({ currentUid, compact = false }) => {
+  const { entries, loading, weekLabel } = useGlobalLeaderboard(compact ? 10 : 25);
+
+  return (
+    <div className="study-global-lb">
+      <div className="study-global-lb-header">
+        <h3 className="study-section-title"><Globe size={13} /> Global — week of {weekLabel}</h3>
+        <span className="study-lb-reset-hint">Resets every Monday</span>
+      </div>
+      {loading
+        ? <p className="study-empty">Loading…</p>
+        : entries.length === 0
+          ? <p className="study-empty">No sessions logged yet this week. Be first! 🚀</p>
+          : <div className="study-leaderboard">
+              {entries.map((e, i) => {
+                const isMe = e.uid === currentUid;
+                const hue  = [...(e.uid || '')].reduce((a, c) => a + c.charCodeAt(0), 0) % 360;
+                const initials = (e.displayName || '?').split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
+                return (
+                  <div key={e.uid}
+                    className={`study-lb-row ${i === 0 ? 'study-lb-row--first' : ''} ${isMe ? 'study-lb-row--me' : ''}`}>
+                    <span className="study-lb-rank">{MEDALS[i] ?? `${i + 1}.`}</span>
+                    {e.photoURL
+                      ? <img src={e.photoURL} alt={e.displayName} className="study-avatar"
+                          style={{ width: 26, height: 26 }} referrerPolicy="no-referrer" />
+                      : <div className="study-avatar study-avatar--init"
+                          style={{ width: 26, height: 26, fontSize: 10, background: `hsl(${hue},55%,45%)` }}>
+                          {initials}
+                        </div>
+                    }
+                    <span className="study-lb-name">
+                      {e.displayName?.split(' ')[0]}
+                      {isMe && <span className="study-you-badge">you</span>}
+                    </span>
+                    <span className="study-lb-stat">
+                      <strong>{e.focusMins}</strong>m
+                      <span className="study-lb-sessions"> · {e.sessions} {e.sessions === 1 ? 'session' : 'sessions'}</span>
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+      }
+    </div>
+  );
+};
+
+/* ══════════════════════════════════════════
    LOBBY
 ══════════════════════════════════════════ */
-const Lobby = () => {
+const Lobby = ({ currentUid }) => {
   const { createRoom, joinRoom, joining, error } = useStudy();
   const [roomName, setRoomName] = useState('');
   const [joinCode, setJoinCode] = useState('');
@@ -134,6 +186,9 @@ const Lobby = () => {
       </div>
 
       {displayErr && <p className="study-error">{displayErr}</p>}
+
+      {/* Global leaderboard in lobby */}
+      <GlobalLeaderboard currentUid={currentUid} />
     </div>
   );
 };
@@ -149,8 +204,10 @@ const Room = () => {
   const { user } = useAuth();
 
   const remaining    = useRoomTimer(room);
-  const completedRef = useRef(false);  // dedup: focus → break
-  const breakEndRef  = useRef(false);  // dedup: break → idle
+  const completedRef = useRef(false);   // dedup: focus → break
+  const breakEndRef  = useRef(false);   // dedup: break → idle
+  const prevStatus   = useRef(room?.status);
+  const [lbTab, setLbTab] = useState('room'); // 'room' | 'global'
 
   /* ── Host: detect phase end and advance ── */
   useEffect(() => {
@@ -170,6 +227,18 @@ const Room = () => {
     if (room?.status === 'focus') completedRef.current = false;
     if (room?.status !== 'break') breakEndRef.current  = false;
   }, [room?.status]);
+
+  /* ── All members: record global session when focus → break ── */
+  useEffect(() => {
+    if (prevStatus.current === 'focus' && room?.status === 'break') {
+      const now      = Date.now();
+      const isActive = me?.status === 'active' && (now - (me?.lastActive || 0)) < 60_000;
+      if (isActive && user) {
+        recordFocusSession(user, room?.sessionDuration || 25);
+      }
+    }
+    prevStatus.current = room?.status;
+  }, [room?.status]); // eslint-disable-line
 
   /* ── Copy code ── */
   const [copied, setCopied] = useState(false);
@@ -356,28 +425,43 @@ const Room = () => {
             </div>
           </div>
 
-          {/* Leaderboard */}
+          {/* Leaderboard — tabbed: Room | Global */}
           <div className="study-section">
-            <h3 className="study-section-title">🏆 Leaderboard</h3>
-            <div className="study-leaderboard">
-              {sorted.every(m => !m.totalFocus)
-                ? <p className="study-empty">Complete a session to earn focus minutes!</p>
-                : sorted.map((m, i) => (
-                  <div key={m.uid}
-                    className={`study-lb-row ${i === 0 ? 'study-lb-row--first' : ''} ${m.uid === user?.uid ? 'study-lb-row--me' : ''}`}>
-                    <span className="study-lb-rank">{MEDALS[i] ?? `${i + 1}.`}</span>
-                    <Avatar member={m} size={26} />
-                    <span className="study-lb-name">
-                      {m.displayName?.split(' ')[0]}
-                      {m.uid === user?.uid && <span className="study-you-badge">you</span>}
-                    </span>
-                    <span className="study-lb-stat">
-                      <strong>{m.totalFocus || 0}</strong>m
-                    </span>
-                  </div>
-                ))
-              }
+            <div className="study-lb-tab-row">
+              <h3 className="study-section-title">🏆 Leaderboard</h3>
+              <div className="study-lb-tabs">
+                <button className={`study-lb-tab ${lbTab === 'room'   ? 'active' : ''}`} onClick={() => setLbTab('room')}>
+                  <Users size={11} /> Room
+                </button>
+                <button className={`study-lb-tab ${lbTab === 'global' ? 'active' : ''}`} onClick={() => setLbTab('global')}>
+                  <Globe size={11} /> Global
+                </button>
+              </div>
             </div>
+
+            {lbTab === 'room' && (
+              <div className="study-leaderboard">
+                {sorted.every(m => !m.totalFocus)
+                  ? <p className="study-empty">Complete a session to earn focus minutes!</p>
+                  : sorted.map((m, i) => (
+                    <div key={m.uid}
+                      className={`study-lb-row ${i === 0 ? 'study-lb-row--first' : ''} ${m.uid === user?.uid ? 'study-lb-row--me' : ''}`}>
+                      <span className="study-lb-rank">{MEDALS[i] ?? `${i + 1}.`}</span>
+                      <Avatar member={m} size={26} />
+                      <span className="study-lb-name">
+                        {m.displayName?.split(' ')[0]}
+                        {m.uid === user?.uid && <span className="study-you-badge">you</span>}
+                      </span>
+                      <span className="study-lb-stat"><strong>{m.totalFocus || 0}</strong>m</span>
+                    </div>
+                  ))
+                }
+              </div>
+            )}
+
+            {lbTab === 'global' && (
+              <GlobalLeaderboard currentUid={user?.uid} compact />
+            )}
           </div>
         </div>
       </div>
@@ -390,6 +474,7 @@ const Room = () => {
 ══════════════════════════════════════════ */
 export const StudyView = () => {
   const { inRoom } = useStudy();
+  const { user }   = useAuth();
   return (
     <div className="study-page">
       {!inRoom && (
@@ -397,7 +482,7 @@ export const StudyView = () => {
           <h1 className="page-title">Study Together</h1>
         </div>
       )}
-      {inRoom ? <Room /> : <Lobby />}
+      {inRoom ? <Room /> : <Lobby currentUid={user?.uid} />}
     </div>
   );
 };

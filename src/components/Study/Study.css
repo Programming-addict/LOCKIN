@@ -582,6 +582,40 @@
   border-radius: var(--radius-sm);
 }
 
+/* ── Global leaderboard block ── */
+.study-global-lb {
+  width: 100%;
+  max-width: 560px;
+  background: var(--surface-1);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-2xl);
+  padding: 20px 20px 16px;
+  animation: card-in 0.4s var(--spring) 0.1s both;
+}
+
+.study-global-lb-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.study-lb-reset-hint {
+  font-size: 11px;
+  color: var(--text-muted);
+  font-style: italic;
+}
+
+/* Leaderboard tab header row (title + tabs side by side) */
+.study-lb-tab-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 2px;
+}
+
 /* Lobby global leaderboard block */
 .study-lobby-leaderboard {
   width: 100%;
