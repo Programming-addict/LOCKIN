@@ -1,17 +1,24 @@
 import { useState, useRef, useEffect } from 'react';
-import { Play, Pause, RotateCcw, Settings, SkipForward } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { Play, Pause, RotateCcw, Settings, SkipForward, Users } from 'lucide-react';
 import { usePomodoroContext } from '../../context/PomodoroContext';
-import { CircularRing } from './CircularRing';
-import { LofiPlayer } from './LofiPlayer';
-import { Confetti } from '../Confetti';
+import { useStudy }           from '../../context/StudyContext';
+import { CircularRing }       from './CircularRing';
+import { LofiPlayer }         from './LofiPlayer';
+import { Confetti }           from '../Confetti';
 import './Pomodoro.css';
 
 export const PomodoroTimer = () => {
-  const { mode, seconds, running, toggle, reset, skipBreak, progress, sessionCount, settings, updateSettings } =
-    usePomodoroContext();
+  const navigate = useNavigate();
+  const {
+    mode, seconds, running, toggle, reset, skipBreak,
+    progress, sessionCount, settings, updateSettings,
+  } = usePomodoroContext();
+
+  const { inRoom, updatePresence } = useStudy();
 
   const [showSettings, setShowSettings] = useState(false);
-  const [draft, setDraft]               = useState(settings);
+  const [draft,        setDraft]        = useState(settings);
 
   /* ── Confetti on session complete ── */
   const prevSession = useRef(sessionCount);
@@ -20,11 +27,19 @@ export const PomodoroTimer = () => {
   useEffect(() => {
     if (sessionCount > prevSession.current) {
       setBurst(false);
-      // Small timeout to let React reset the prop before re-triggering
       setTimeout(() => setBurst(true), 30);
     }
     prevSession.current = sessionCount;
   }, [sessionCount]);
+
+  /* ── Sync presence to study room when timer state changes ── */
+  useEffect(() => {
+    if (!inRoom) return;
+    const status = running
+      ? (mode === 'work' ? 'focusing' : 'break')
+      : 'idle';
+    updatePresence({ status }).catch(() => {});
+  }, [running, mode, inRoom, updatePresence]);
 
   /* ── Magnetic play button ── */
   const playRef = useRef(null);
@@ -55,6 +70,15 @@ export const PomodoroTimer = () => {
 
       <div className="page-header">
         <h1 className="page-title">Pomodoro Timer</h1>
+        {/* Study Together shortcut */}
+        <button
+          className={`icon-btn party-icon-btn ${inRoom ? 'party-active' : ''}`}
+          onClick={() => navigate('/study')}
+          title={inRoom ? 'Back to study room' : 'Study with friends'}
+        >
+          <Users size={18} />
+          {inRoom && <span className="party-dot" />}
+        </button>
         <button className="icon-btn" onClick={() => { setDraft(settings); setShowSettings(true); }}>
           <Settings size={18} />
         </button>

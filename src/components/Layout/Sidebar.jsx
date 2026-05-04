@@ -2,6 +2,7 @@ import { NavLink } from 'react-router-dom';
 import { Timer, CheckSquare, Calendar, Target, Flame, BarChart2, Newspaper, Users, Menu, X } from 'lucide-react';
 import { useState } from 'react';
 import { usePomodoroContext } from '../../context/PomodoroContext';
+import { useStudy } from '../../context/StudyContext';
 import { AuthButton } from '../Auth/AuthButton';
 import './Sidebar.css';
 
@@ -17,7 +18,8 @@ const NAV = [
 
 export const Sidebar = ({ streak }) => {
   const [open, setOpen] = useState(false);
-  const { running } = usePomodoroContext();
+  const { running }  = usePomodoroContext();
+  const { inRoom }   = useStudy();
 
   return (
     <>
@@ -42,7 +44,8 @@ export const Sidebar = ({ streak }) => {
             >
               <Icon size={17} />
               <span>{label}</span>
-              {to === '/' && running && <span className="nav-indicator" />}
+              {to === '/'      && running && <span className="nav-indicator" />}
+              {to === '/study' && inRoom  && <span className="nav-indicator" style={{ background: 'var(--green)' }} />}
             </NavLink>
           ))}
         </nav>

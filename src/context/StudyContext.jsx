@@ -1,148 +1,283 @@
 import { createContext, useContext, useEffect, useRef, useState, useCallback } from 'react';
 import {
-  doc, collection, setDoc, getDoc, onSnapshot, deleteDoc, updateDoc, serverTimestamp,
+  doc, collection, setDoc, getDoc, getDocs, onSnapshot,
+  deleteDoc, updateDoc, writeBatch, serverTimestamp, Timestamp,
 } from 'firebase/firestore';
-import { db } from '../firebase';
+import { db, firebaseEnabled } from '../firebase';
 import { useAuth } from './AuthContext';
 
-const StudyContext = createContext(null);
-export const useStudy = () => useContext(StudyContext);
+/* ─── Constants ─── */
+const PRESENCE_INTERVAL = 15_000;   // heartbeat every 15 s
+const IDLE_THRESHOLD    = 60_000;   // no heartbeat for 60 s → idle
 
+/* ─── Firestore refs ─── */
+const roomRef    = (code)       => doc(db, 'studyRooms', code);
+const memberRef  = (code, uid)  => doc(db, 'studyRooms', code, 'members', uid);
+const membersCol = (code)       => collection(db, 'studyRooms', code, 'members');
+
+/* ─── Room code generator ─── */
 const genCode = () => {
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
   return Array.from({ length: 6 }, () => chars[Math.floor(Math.random() * chars.length)]).join('');
 };
 
-const roomDoc    = (code) => doc(db, 'studyRooms', code);
-const memberDoc  = (code, uid) => doc(db, 'studyRooms', code, 'members', uid);
-const membersCol = (code) => collection(db, 'studyRooms', code, 'members');
+/* ─── Context ─── */
+const StudyContext = createContext(null);
+export const useStudy = () => useContext(StudyContext);
 
 export const StudyProvider = ({ children }) => {
   const { user } = useAuth();
+
   const [roomCode, setRoomCode] = useState(() => sessionStorage.getItem('study_room') || null);
-  const [room, setRoom]         = useState(null);
+  const [room,    setRoom]      = useState(null);
   const [members, setMembers]   = useState([]);
   const [joining, setJoining]   = useState(false);
+  const [error,   setError]     = useState('');
 
   const unsubRoom    = useRef(null);
   const unsubMembers = useRef(null);
-  const heartbeat    = useRef(null);
+  const heartbeatRef = useRef(null);
+  const completedRef = useRef(false);   // dedup guard for completeSession
 
-  /* ── Subscribe when roomCode is set ── */
+  /* ══════════════════════════════════════════
+     SUBSCRIPTIONS
+  ══════════════════════════════════════════ */
   useEffect(() => {
     unsubRoom.current?.();
     unsubMembers.current?.();
-    clearInterval(heartbeat.current);
+    clearInterval(heartbeatRef.current);
 
-    if (!roomCode || !user) { setRoom(null); setMembers([]); return; }
+    if (!firebaseEnabled || !db || !roomCode || !user) {
+      setRoom(null); setMembers([]); return;
+    }
 
-    unsubRoom.current = onSnapshot(roomDoc(roomCode), snap => {
+    unsubRoom.current = onSnapshot(roomRef(roomCode), snap => {
       if (!snap.exists()) {
         sessionStorage.removeItem('study_room');
         setRoomCode(null); setRoom(null);
         return;
       }
-      setRoom({ code: roomCode, ...snap.data() });
-    }, () => { /* permission error — room gone */ setRoomCode(null); });
+      const data = snap.data();
+      // Reset dedup guard when phase changes
+      if (data.status !== 'focus') completedRef.current = false;
+      setRoom({ code: roomCode, ...data });
+    }, () => { setRoomCode(null); });
 
     unsubMembers.current = onSnapshot(membersCol(roomCode), snap => {
       setMembers(snap.docs.map(d => d.data()));
     });
 
-    const pulse = () => setDoc(memberDoc(roomCode, user.uid),
-      { lastSeen: Date.now() }, { merge: true }).catch(() => {});
+    // Presence heartbeat
+    const pulse = () => {
+      if (!db) return;
+      setDoc(memberRef(roomCode, user.uid),
+        { status: 'active', lastActive: Date.now() }, { merge: true }
+      ).catch(() => {});
+    };
+
+    const markIdle = () => {
+      if (!db) return;
+      setDoc(memberRef(roomCode, user.uid),
+        { status: 'idle', lastActive: Date.now() }, { merge: true }
+      ).catch(() => {});
+    };
+
     pulse();
-    heartbeat.current = setInterval(pulse, 25_000);
+    heartbeatRef.current = setInterval(pulse, PRESENCE_INTERVAL);
+
+    // Tab visibility
+    const onVis = () =>
+      document.visibilityState === 'visible' ? pulse() : markIdle();
+    document.addEventListener('visibilitychange', onVis);
 
     return () => {
       unsubRoom.current?.();
       unsubMembers.current?.();
-      clearInterval(heartbeat.current);
+      clearInterval(heartbeatRef.current);
+      document.removeEventListener('visibilitychange', onVis);
     };
   }, [roomCode, user]);
 
+  /* ══════════════════════════════════════════
+     CREATE ROOM
+  ══════════════════════════════════════════ */
   const createRoom = useCallback(async (name) => {
-    if (!user) return { error: 'Not signed in' };
+    if (!firebaseEnabled || !db) return { error: 'Firebase not configured.' };
+    if (!user) return { error: 'Not signed in.' };
+    setError('');
+
     const code = genCode();
     const now  = Date.now();
-    const settings = { work: 25, break: 5 };
     try {
-      await setDoc(roomDoc(code), {
-        name:     (name.trim() || `${user.displayName?.split(' ')[0] ?? 'My'}'s Room`),
-        hostUid:  user.uid,
-        createdAt: serverTimestamp(),
-        settings,
-        timer: { mode: 'work', running: false, seconds: settings.work * 60, total: settings.work * 60, updatedAt: now },
+      await setDoc(roomRef(code), {
+        name:        (name.trim() || `${user.displayName?.split(' ')[0] ?? 'My'}'s Room`),
+        hostId:      user.uid,
+        status:      'idle',
+        sessionEndTime:  null,
+        sessionDuration: 25,
+        breakDuration:   5,
+        createdAt:   serverTimestamp(),
       });
-      await setDoc(memberDoc(code, user.uid), {
-        uid: user.uid,
+      await setDoc(memberRef(code, user.uid), {
+        uid:         user.uid,
         displayName: user.displayName || 'Anonymous',
-        photoURL: user.photoURL || null,
-        status: 'idle', focusMins: 0, sessions: 0,
-        lastSeen: now, joinedAt: now,
+        photoURL:    user.photoURL    || null,
+        status:      'active',
+        lastActive:  now,
+        totalFocus:  0,
+        joinedAt:    now,
       });
       sessionStorage.setItem('study_room', code);
       setRoomCode(code);
       return { code };
-    } catch (e) { return { error: e.message }; }
+    } catch (e) {
+      const msg = e?.code === 'permission-denied'
+        ? 'Permission denied — update your Firestore rules.'
+        : (e?.message || 'Failed to create room.');
+      setError(msg);
+      return { error: msg };
+    }
   }, [user]);
 
+  /* ══════════════════════════════════════════
+     JOIN ROOM
+  ══════════════════════════════════════════ */
   const joinRoom = useCallback(async (code) => {
-    if (!user) return { error: 'Not signed in' };
+    if (!firebaseEnabled || !db) return { error: 'Firebase not configured.' };
+    if (!user) return { error: 'Not signed in.' };
     const clean = code.trim().toUpperCase();
-    setJoining(true);
+    setJoining(true); setError('');
     try {
-      const snap = await getDoc(roomDoc(clean));
+      const snap = await getDoc(roomRef(clean));
       if (!snap.exists()) return { error: 'Room not found — check the code.' };
       const now = Date.now();
-      await setDoc(memberDoc(clean, user.uid), {
-        uid: user.uid,
+      await setDoc(memberRef(clean, user.uid), {
+        uid:         user.uid,
         displayName: user.displayName || 'Anonymous',
-        photoURL: user.photoURL || null,
-        status: 'idle', focusMins: 0, sessions: 0,
-        lastSeen: now, joinedAt: now,
+        photoURL:    user.photoURL    || null,
+        status:      'active',
+        lastActive:  now,
+        totalFocus:  0,
+        joinedAt:    now,
       }, { merge: true });
       sessionStorage.setItem('study_room', clean);
       setRoomCode(clean);
       return { success: true };
-    } catch (e) { return { error: e.message }; }
-    finally { setJoining(false); }
+    } catch (e) {
+      const msg = e?.message || 'Failed to join room.';
+      setError(msg);
+      return { error: msg };
+    } finally { setJoining(false); }
   }, [user]);
 
+  /* ══════════════════════════════════════════
+     LEAVE ROOM
+  ══════════════════════════════════════════ */
   const leaveRoom = useCallback(async () => {
-    if (!roomCode || !user) return;
-    clearInterval(heartbeat.current);
-    const wasHost = room?.hostUid === user.uid;
+    if (!firebaseEnabled || !db || !roomCode || !user) return;
+    clearInterval(heartbeatRef.current);
+    const wasHost = room?.hostId === user.uid;
     try {
-      await deleteDoc(memberDoc(roomCode, user.uid));
-      if (wasHost) await deleteDoc(roomDoc(roomCode));
+      await deleteDoc(memberRef(roomCode, user.uid));
+      if (wasHost) await deleteDoc(roomRef(roomCode));
     } catch { /* ignore */ }
     sessionStorage.removeItem('study_room');
     setRoomCode(null); setRoom(null); setMembers([]);
   }, [roomCode, user, room]);
 
-  /* ── Host-only: push timer state to Firestore ── */
-  const pushTimer = useCallback(async (timerPatch) => {
-    if (!roomCode || room?.hostUid !== user?.uid) return;
-    await updateDoc(roomDoc(roomCode), { timer: { ...timerPatch, updatedAt: Date.now() } });
+  /* ══════════════════════════════════════════
+     START SESSION  (host only)
+  ══════════════════════════════════════════ */
+  const startSession = useCallback(async (durationMins = 25) => {
+    if (!db || room?.hostId !== user?.uid || !roomCode) return;
+    completedRef.current = false;
+    const endTime = Timestamp.fromMillis(Date.now() + durationMins * 60 * 1000);
+    await updateDoc(roomRef(roomCode), {
+      status:          'focus',
+      sessionEndTime:  endTime,
+      sessionDuration: durationMins,
+    });
   }, [roomCode, room, user]);
 
-  /* ── Any member: update own status + focus stats ── */
-  const updatePresence = useCallback(async (patch) => {
-    if (!roomCode || !user) return;
-    await setDoc(memberDoc(roomCode, user.uid), { ...patch, lastSeen: Date.now() }, { merge: true });
-  }, [roomCode, user]);
+  /* ══════════════════════════════════════════
+     COMPLETE SESSION  (host only, dedup-safe)
+     Called when focus timer hits 0.
+     Reads all members, awards focus credits to
+     active ones, then transitions to break.
+  ══════════════════════════════════════════ */
+  const completeSession = useCallback(async () => {
+    if (!db || room?.hostId !== user?.uid || !roomCode) return;
+    if (completedRef.current) return;           // dedup guard
+    completedRef.current = true;
 
-  const isHost = !!user && room?.hostUid === user.uid;
+    try {
+      // Re-read room to confirm still in 'focus'
+      const roomSnap = await getDoc(roomRef(roomCode));
+      if (!roomSnap.exists() || roomSnap.data().status !== 'focus') {
+        completedRef.current = false; return;
+      }
+      const roomData     = roomSnap.data();
+      const membersSnap  = await getDocs(membersCol(roomCode));
+      const now          = Date.now();
+
+      const batch = writeBatch(db);
+
+      // Award credits to eligible active members
+      for (const mSnap of membersSnap.docs) {
+        const m = mSnap.data();
+        const active = m.status === 'active' && (now - (m.lastActive || 0)) < IDLE_THRESHOLD;
+        if (active) {
+          batch.update(mSnap.ref, {
+            totalFocus: (m.totalFocus || 0) + (roomData.sessionDuration || 25),
+          });
+        }
+      }
+
+      // Transition to break
+      const breakMins = roomData.breakDuration || 5;
+      const breakEnd  = Timestamp.fromMillis(now + breakMins * 60 * 1000);
+      batch.update(roomRef(roomCode), {
+        status:        'break',
+        sessionEndTime: breakEnd,
+      });
+
+      await batch.commit();
+    } catch {
+      completedRef.current = false;  // allow retry on transient error
+    }
+  }, [roomCode, room, user]);
+
+  /* ══════════════════════════════════════════
+     END BREAK  (host only)
+     Called when break timer hits 0.
+  ══════════════════════════════════════════ */
+  const endBreak = useCallback(async () => {
+    if (!db || room?.hostId !== user?.uid || !roomCode) return;
+    await updateDoc(roomRef(roomCode), {
+      status:        'idle',
+      sessionEndTime: null,
+    });
+  }, [roomCode, room, user]);
+
+  /* ══════════════════════════════════════════
+     UPDATE SETTINGS  (host only)
+  ══════════════════════════════════════════ */
+  const updateRoomSettings = useCallback(async (patch) => {
+    if (!db || room?.hostId !== user?.uid || !roomCode) return;
+    await updateDoc(roomRef(roomCode), patch);
+  }, [roomCode, room, user]);
+
+  const isHost = !!user && room?.hostId === user.uid;
   const inRoom = !!roomCode && !!room;
   const me     = members.find(m => m.uid === user?.uid) ?? null;
 
   return (
     <StudyContext.Provider value={{
-      room, members, me, roomCode,
+      room, members, me, roomCode, error,
       inRoom, isHost, joining,
       createRoom, joinRoom, leaveRoom,
-      pushTimer, updatePresence,
+      startSession, completeSession, endBreak,
+      updateRoomSettings,
     }}>
       {children}
     </StudyContext.Provider>

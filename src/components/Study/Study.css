@@ -480,3 +480,128 @@
   padding: 8px 0;
   margin: 0;
 }
+
+/* ── Duration selector (host) ── */
+.study-dur-select {
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text);
+  font-size: 14px;
+  font-family: var(--font-mono);
+  font-weight: 600;
+  padding: 7px 10px;
+  cursor: pointer;
+  transition: border-color var(--duration);
+}
+.study-dur-select:focus { border-color: var(--blue); outline: none; }
+.study-dur-select option { background: var(--surface-2); }
+
+/* ── Session stats row ── */
+.study-session-stats {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+  margin-top: 4px;
+}
+.study-stat {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12px;
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+/* ── Skip break button ── */
+.study-skip-btn {
+  font-size: 13px;
+  padding: 7px 16px;
+}
+
+/* ── Presence dot on avatar ── */
+.study-avatar-wrap {
+  position: relative;
+  flex-shrink: 0;
+}
+.study-presence-dot {
+  position: absolute;
+  bottom: 1px;
+  right: 1px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--surface-3);
+  border: 1.5px solid var(--bg);
+}
+.study-presence-dot.online {
+  background: var(--green);
+  box-shadow: 0 0 4px rgba(48,209,88,0.6);
+}
+
+/* ── Leaderboard tabs (Room / Global) ── */
+.study-lb-tabs {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 10px;
+}
+
+.study-lb-tab {
+  background: none;
+  border: none;
+  padding: 5px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-muted);
+  cursor: pointer;
+  border-radius: 20px;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  transition: all var(--duration) var(--ease);
+}
+
+.study-lb-tab.active {
+  background: var(--surface-2);
+  color: var(--text);
+}
+
+.study-lb-subtitle {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  color: var(--text-muted);
+  margin: 0 0 8px;
+}
+
+/* My row highlight in global leaderboard */
+.study-lb-row--me {
+  background: rgba(10, 132, 255, 0.07);
+  border-radius: var(--radius-sm);
+}
+
+/* Lobby global leaderboard block */
+.study-lobby-leaderboard {
+  width: 100%;
+  max-width: 560px;
+  background: var(--surface-1);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-2xl);
+  padding: 20px 20px 16px;
+  animation: card-in 0.4s var(--spring) 0.1s both;
+}
+
+/* ── section-title as flex used in lobby lb ── */
+.study-section-title {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  color: var(--text-muted);
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}

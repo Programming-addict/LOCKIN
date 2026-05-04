@@ -3,9 +3,9 @@ import { usePomodoro } from '../hooks/usePomodoro';
 
 const PomodoroContext = createContext(null);
 
-export const PomodoroProvider = ({ children }) => {
+export const PomodoroProvider = ({ children, onSessionComplete }) => {
   // Hook lives here — never unmounts when routes change
-  const pomodoro = usePomodoro();
+  const pomodoro = usePomodoro(onSessionComplete);
   return (
     <PomodoroContext.Provider value={pomodoro}>
       {children}

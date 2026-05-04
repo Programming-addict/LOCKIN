@@ -27,7 +27,7 @@ const loadPersistedState = (settings) => {
   return { mode: saved.mode, seconds: saved.seconds, total: saved.total };
 };
 
-export const usePomodoro = () => {
+export const usePomodoro = (onSessionComplete) => {
   const [settings, setSettings] = useState(() => get('pomo_settings', DEFAULTS));
   const initState = loadPersistedState(get('pomo_settings', DEFAULTS));
   const [mode, setMode]         = useState(initState.mode);
@@ -61,9 +61,10 @@ export const usePomodoro = () => {
       const data = get('pomo_sessions', {});
       data[todayKey()] = next;
       set('pomo_sessions', data);
+      onSessionComplete?.();
       return next;
     });
-  }, []);
+  }, [onSessionComplete]);
 
   // Shared end-of-phase logic
   const handlePhaseEnd = useCallback((currentMode) => {

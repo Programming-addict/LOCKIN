@@ -1,7 +1,7 @@
 import { createContext, useContext, useEffect, useRef, useState } from 'react';
 import { onAuthStateChanged, signInWithPopup, signOut as fbSignOut } from 'firebase/auth';
 import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
-import { auth, db, gProvider } from '../firebase';
+import { auth, db, gProvider, firebaseEnabled } from '../firebase';
 import { registerSyncCallback, unregisterSyncCallback } from '../utils/storage';
 
 // Keys to sync — excludes pomo_state (live timer, changes every second)
@@ -25,6 +25,7 @@ export const useAuth = () => useContext(AuthContext);
 export const AuthProvider = ({ children }) => {
   const [user, setUser]       = useState(undefined); // undefined = loading
   const [syncing, setSyncing] = useState(false);
+  const [authError, setAuthError] = useState(null);
   const timers = useRef({});
 
   /* ── Firestore helpers ── */
@@ -59,6 +60,11 @@ export const AuthProvider = ({ children }) => {
 
   /* ── Auth state listener ── */
   useEffect(() => {
+    if (!firebaseEnabled || !auth || !db) {
+      setUser(null);
+      return () => {};
+    }
+
     const unsub = onAuthStateChanged(auth, async (fbUser) => {
       setUser(fbUser ?? null);
 
@@ -94,12 +100,40 @@ export const AuthProvider = ({ children }) => {
   }, []);
 
   /* ── Public actions ── */
+  const toFriendlyAuthError = (e) => {
+    const code = e?.code || '';
+    if (code === 'auth/popup-blocked') return 'Popup blocked. Allow popups for this site and try again.';
+    if (code === 'auth/popup-closed-by-user') return 'Sign-in popup was closed.';
+    if (code === 'auth/cancelled-popup-request') return 'Another sign-in popup is already open.';
+    if (code === 'auth/operation-not-allowed') return 'Google sign-in is disabled in Firebase Auth. Enable Google provider.';
+    if (code === 'auth/unauthorized-domain') {
+      const host = typeof window !== 'undefined' ? window.location.hostname : 'this domain';
+      return `Unauthorized domain. Add ${host} to Firebase Auth → Settings → Authorized domains.`;
+    }
+    return e?.message || 'Sign-in failed.';
+  };
+
   const signIn = async () => {
+    if (!firebaseEnabled || !auth || !gProvider) {
+      const msg = 'Firebase is not configured. Set VITE_FIREBASE_* env vars to enable sign-in.';
+      console.warn(msg);
+      setAuthError(msg);
+      return;
+    }
+    setAuthError(null);
     try { await signInWithPopup(auth, gProvider); }
-    catch (e) { console.warn('Sign-in cancelled or failed:', e); }
+    catch (e) {
+      console.warn('Sign-in cancelled or failed:', e);
+      setAuthError(toFriendlyAuthError(e));
+    }
   };
 
   const signOut = async () => {
+    if (!firebaseEnabled || !auth || !db) {
+      setUser(null);
+      setAuthError(null);
+      return;
+    }
     if (user) {
       setSyncing(true);
       try { await pushAll(user.uid); } catch { /* best-effort */ }
@@ -109,10 +143,11 @@ export const AuthProvider = ({ children }) => {
     if (user) sessionStorage.removeItem('lockin_synced_' + user.uid);
     unregisterSyncCallback();
     await fbSignOut(auth);
+    setAuthError(null);
   };
 
   return (
-    <AuthContext.Provider value={{ user, syncing, signIn, signOut }}>
+    <AuthContext.Provider value={{ user, syncing, signIn, signOut, firebaseEnabled, authError }}>
       {children}
     </AuthContext.Provider>
   );

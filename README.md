@@ -58,7 +58,26 @@ npm run build
 
 1. Push to GitHub
 2. Connect your repo to Vercel
-3. Vercel auto-detects Vite configuration → Deploy
+3. Set Environment Variables (Project Settings → Environment Variables):
+   - `VITE_FIREBASE_API_KEY`
+   - `VITE_FIREBASE_AUTH_DOMAIN`
+   - `VITE_FIREBASE_PROJECT_ID`
+   - `VITE_FIREBASE_STORAGE_BUCKET`
+   - `VITE_FIREBASE_MESSAGING_SENDER_ID`
+   - `VITE_FIREBASE_APP_ID`
+4. Vercel auto-detects Vite configuration → Deploy
+
+### Firestore Rules
+
+`Study Together` and cloud sync need Firestore rules deployed for the Firebase project.
+
+1. Install Firebase CLI
+2. Log in with `firebase login`
+3. Deploy rules with `firebase deploy --only firestore:rules`
+
+The repo includes:
+- `firebase.json`
+- `firestore.rules`
 
 Or use Vercel CLI:
 ```bash
