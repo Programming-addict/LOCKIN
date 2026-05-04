@@ -24,24 +24,29 @@ const Avatar = ({ member, size = 36 }) => {
 
 /* ══════════════════════════════════════════
    useRoomTimer
-   Source of truth: room.sessionEndTime (Firestore Timestamp)
-   Local interval only drives the display — no drift, no independent state.
+   Source of truth: room.sessionEndTime (Firestore Timestamp).
+   Convert to a plain number (ms) before using as a dependency —
+   Firestore creates a new Timestamp object on every snapshot even
+   when the value hasn't changed, which would restart the interval
+   every tick if we used the object directly.
 ══════════════════════════════════════════ */
 const useRoomTimer = (room) => {
   const [remaining, setRemaining] = useState(0);
 
+  // Stable primitive — only changes when the actual end-time changes
+  const endMs =
+    room?.sessionEndTime?.toMillis?.()
+    ?? (typeof room?.sessionEndTime === 'number' ? room.sessionEndTime : null);
+
   useEffect(() => {
-    if (!room?.sessionEndTime || room.status === 'idle') {
+    if (!endMs || room?.status === 'idle') {
       setRemaining(0); return;
     }
-
-    const endMs = room.sessionEndTime.toMillis?.() ?? room.sessionEndTime;
-
     const update = () => setRemaining(Math.max(0, Math.floor((endMs - Date.now()) / 1000)));
     update();
-    const id = setInterval(update, 500);    // 500 ms → smooth display, low cost
+    const id = setInterval(update, 500);
     return () => clearInterval(id);
-  }, [room?.sessionEndTime, room?.status]);
+  }, [endMs, room?.status]); // endMs is a number — safe reference comparison
 
   return remaining;
 };
@@ -143,8 +148,9 @@ const Room = () => {
   } = useStudy();
   const { user } = useAuth();
 
-  const remaining   = useRoomTimer(room);
-  const completedRef = useRef(false);
+  const remaining    = useRoomTimer(room);
+  const completedRef = useRef(false);  // dedup: focus → break
+  const breakEndRef  = useRef(false);  // dedup: break → idle
 
   /* ── Host: detect phase end and advance ── */
   useEffect(() => {
@@ -153,13 +159,16 @@ const Room = () => {
       completedRef.current = true;
       completeSession();
     }
-    if (room?.status === 'break' && remaining <= 0) {
+    if (room?.status === 'break' && remaining <= 0 && !breakEndRef.current) {
+      breakEndRef.current = true;
       endBreak();
     }
-  }, [remaining, isHost, room?.status]);   // eslint-disable-line
+  }, [remaining, isHost, room?.status]); // eslint-disable-line
 
+  /* ── Reset dedup guards when phase changes ── */
   useEffect(() => {
-    if (room?.status !== 'focus') completedRef.current = false;
+    if (room?.status === 'focus') completedRef.current = false;
+    if (room?.status !== 'break') breakEndRef.current  = false;
   }, [room?.status]);
 
   /* ── Copy code ── */
