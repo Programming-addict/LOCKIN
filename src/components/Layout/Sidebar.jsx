@@ -1,25 +1,23 @@
 import { NavLink } from 'react-router-dom';
-import { Timer, CheckSquare, Calendar, Target, Flame, BarChart2, Newspaper, Users, Menu, X } from 'lucide-react';
+import { Timer, CheckSquare, Calendar, Target, BarChart2, Newspaper, Trophy, Flame, Menu, X } from 'lucide-react';
 import { useState } from 'react';
 import { usePomodoroContext } from '../../context/PomodoroContext';
-import { useStudy } from '../../context/StudyContext';
 import { AuthButton } from '../Auth/AuthButton';
 import './Sidebar.css';
 
 const NAV = [
-  { to: '/',        icon: Timer,       label: 'Pomodoro'      },
-  { to: '/todos',   icon: CheckSquare, label: 'To-Do'         },
-  { to: '/calendar',icon: Calendar,    label: 'Calendar'      },
-  { to: '/goals',   icon: Target,      label: 'Daily Goals'   },
-  { to: '/review',  icon: BarChart2,   label: 'Weekly Review' },
-  { to: '/news',    icon: Newspaper,   label: 'News'          },
-  { to: '/study',   icon: Users,       label: 'Study Together'},
+  { to: '/',           icon: Timer,       label: 'Pomodoro'      },
+  { to: '/todos',      icon: CheckSquare, label: 'To-Do'         },
+  { to: '/calendar',   icon: Calendar,    label: 'Calendar'      },
+  { to: '/goals',      icon: Target,      label: 'Daily Goals'   },
+  { to: '/review',     icon: BarChart2,   label: 'Weekly Review' },
+  { to: '/news',       icon: Newspaper,   label: 'News'          },
+  { to: '/leaderboard',icon: Trophy,      label: 'Leaderboard'   },
 ];
 
 export const Sidebar = ({ streak }) => {
   const [open, setOpen] = useState(false);
-  const { running }  = usePomodoroContext();
-  const { inRoom, room } = useStudy();
+  const { running } = usePomodoroContext();
 
   return (
     <>
@@ -44,27 +42,9 @@ export const Sidebar = ({ streak }) => {
             >
               <Icon size={17} />
               <span>{label}</span>
-              {to === '/'      && running && <span className="nav-indicator" />}
-              {to === '/study' && inRoom  && <span className="nav-indicator" style={{ background: 'var(--green)' }} />}
+              {to === '/' && running && <span className="nav-indicator" />}
             </NavLink>
           ))}
-
-          {/* Dynamic: Study room tab (appears when in a room) */}
-          {inRoom && (
-            <NavLink
-              to="/study"
-              className={({ isActive }) => `nav-item nav-item--room ${isActive ? 'active' : ''}`}
-              onClick={() => setOpen(false)}
-              title={`Study room: ${room?.name || 'Unnamed'}`}
-            >
-              <Users size={17} />
-              <span className="nav-room-label">
-                {room?.name || 'Study Room'}
-                <span className="nav-room-badge">live</span>
-              </span>
-              <span className="nav-indicator" style={{ background: 'var(--green)' }} />
-            </NavLink>
-          )}
         </nav>
 
         <div className="sidebar-streak">

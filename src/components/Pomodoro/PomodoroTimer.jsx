@@ -1,8 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Play, Pause, RotateCcw, Settings, SkipForward, Users } from 'lucide-react';
+import { Play, Pause, RotateCcw, Settings, SkipForward } from 'lucide-react';
 import { usePomodoroContext }  from '../../context/PomodoroContext';
-import { useStudy }            from '../../context/StudyContext';
 import { useAuth }             from '../../context/AuthContext';
 import { CircularRing }        from './CircularRing';
 import { LofiPlayer }          from './LofiPlayer';
@@ -13,13 +11,11 @@ import { PetWidget }           from '../Pet/PetWidget';
 import './Pomodoro.css';
 
 export const PomodoroTimer = () => {
-  const navigate = useNavigate();
   const {
     mode, seconds, running, toggle, reset, skipBreak,
     progress, sessionCount, settings, updateSettings,
   } = usePomodoroContext();
 
-  const { inRoom, syncRoomPresence, awardRoomFocus } = useStudy();
   const { user } = useAuth();
   const { awardCredits } = usePet();
 
@@ -37,31 +33,18 @@ export const PomodoroTimer = () => {
       // Record to global leaderboard + award pet credits
       recordFocusSession(user, settings.work);
       awardCredits(settings.work);
-      // Award focus minutes in study room (individual, not host-controlled)
-      if (inRoom) awardRoomFocus(settings.work);
     }
     prevSession.current = sessionCount;
   }, [sessionCount]); // eslint-disable-line
 
-  /* ── Sync presence to study room + global leaderboard when timer state changes ── */
+  /* ── Update leaderboard status when timer state changes ── */
   useEffect(() => {
     if (!user) return;
-    // Update global leaderboard status
     const leaderboardStatus = running && mode === 'work' ? 'active' : 'idle';
     updateUserStatus(user, leaderboardStatus).catch(() => {});
+  }, [running, mode, user]); // eslint-disable-line
 
-    // Sync to study room if in one
-    if (!inRoom) return;
-    if (running && mode === 'work') {
-      syncRoomPresence({ status: 'focusing', currentSessionStart: Date.now() });
-    } else if (running && mode === 'break') {
-      syncRoomPresence({ status: 'break', currentSessionStart: null });
-    } else {
-      syncRoomPresence({ status: 'idle', currentSessionStart: null });
-    }
-  }, [running, mode, inRoom, user, syncRoomPresence]); // eslint-disable-line
-
-  /* ── Magnetic play button ── */
+/* ── Magnetic play button ── */
   const playRef = useRef(null);
 
   const onPlayMouseMove = (e) => {
@@ -90,15 +73,6 @@ export const PomodoroTimer = () => {
 
       <div className="page-header">
         <h1 className="page-title">Pomodoro Timer</h1>
-        {/* Study Together shortcut */}
-        <button
-          className={`icon-btn party-icon-btn ${inRoom ? 'party-active' : ''}`}
-          onClick={() => navigate('/study')}
-          title={inRoom ? 'Back to study room' : 'Study with friends'}
-        >
-          <Users size={18} />
-          {inRoom && <span className="party-dot" />}
-        </button>
         <button className="icon-btn" onClick={() => { setDraft(settings); setShowSettings(true); }}>
           <Settings size={18} />
         </button>

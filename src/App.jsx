@@ -4,7 +4,6 @@ import { PomodoroProvider }  from './context/PomodoroContext';
 import { RemindersProvider } from './context/RemindersContext';
 import { AuthProvider }      from './context/AuthContext';
 import { useAuth }           from './context/AuthContext';
-import { StudyProvider }     from './context/StudyContext';
 import { Layout }            from './components/Layout/Layout';
 import { PomodoroTimer }     from './components/Pomodoro/PomodoroTimer';
 import { TodoList }          from './components/Todo/TodoList';
@@ -12,7 +11,7 @@ import { CalendarView }      from './components/Calendar/CalendarView';
 import { DailyGoalsView }    from './components/DailyGoals/DailyGoalsView';
 import { WeeklyReview }      from './components/WeeklyReview/WeeklyReview';
 import { NewsView }          from './components/News/NewsView';
-import { StudyView }         from './components/Study/StudyView';
+import { LeaderboardView }   from './components/Leaderboard/LeaderboardView';
 import { LoginPage }         from './components/Auth/LoginPage';
 import { useStreak }         from './hooks/useStreak';
 import { useDailyGoals }     from './hooks/useDailyGoals';
@@ -49,23 +48,21 @@ const AppRoutes = () => {
 
   return (
     <BrowserRouter>
-      <StudyProvider>
-        <PomodoroProvider onSessionComplete={handleSessionComplete}>
-          <RemindersProvider>
-            <Routes>
-              <Route element={<Layout streak={streak} />}>
-                <Route index            element={<PomodoroTimer />} />
-                <Route path="todos"     element={<TodoList />} />
-                <Route path="calendar"  element={<CalendarView />} />
-                <Route path="goals"     element={<DailyGoalsView />} />
-                <Route path="review"    element={<WeeklyReview />} />
-                <Route path="news"      element={<NewsView />} />
-                <Route path="study"     element={<StudyView />} />
-              </Route>
-            </Routes>
-          </RemindersProvider>
-        </PomodoroProvider>
-      </StudyProvider>
+      <PomodoroProvider onSessionComplete={handleSessionComplete}>
+        <RemindersProvider>
+          <Routes>
+            <Route element={<Layout streak={streak} />}>
+              <Route index                  element={<PomodoroTimer />} />
+              <Route path="todos"           element={<TodoList />} />
+              <Route path="calendar"        element={<CalendarView />} />
+              <Route path="goals"           element={<DailyGoalsView />} />
+              <Route path="review"          element={<WeeklyReview />} />
+              <Route path="news"            element={<NewsView />} />
+              <Route path="leaderboard"     element={<LeaderboardView />} />
+            </Route>
+          </Routes>
+        </RemindersProvider>
+      </PomodoroProvider>
     </BrowserRouter>
   );
 };
